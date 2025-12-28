@@ -67,12 +67,55 @@
         min-height: 100vh;
         font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
         color: var(--ink);
-        background: radial-gradient(circle at top left, var(--bg-grad-1) 0%, transparent 45%),
-          radial-gradient(circle at 80% 10%, var(--bg-grad-2) 0%, transparent 40%),
-          linear-gradient(180deg, var(--bg-grad-3) 0%, var(--bg-grad-4) 100%);
+        background: transparent;
         position: relative;
         overflow-x: hidden;
-        transition: background 0.3s ease, color 0.3s ease;
+        transition: color 0.3s ease;
+      }
+
+      .blobs {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        overflow: hidden;
+        pointer-events: none;
+        background: linear-gradient(180deg, var(--bg-grad-3) 0%, var(--bg-grad-4) 100%);
+        transition: background 0.3s ease;
+      }
+
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.6;
+      }
+
+      .blob-1 {
+        top: -10%;
+        left: -10%;
+        width: 50vw;
+        height: 50vw;
+        background: var(--bg-grad-1);
+        animation: float1 25s infinite alternate ease-in-out;
+      }
+
+      .blob-2 {
+        bottom: 20%;
+        right: -10%;
+        width: 40vw;
+        height: 40vw;
+        background: var(--bg-grad-2);
+        animation: float2 20s infinite alternate ease-in-out;
+      }
+
+      @keyframes float1 {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        100% { transform: translate(100px, 50px) rotate(20deg); }
+      }
+
+      @keyframes float2 {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        100% { transform: translate(-80px, -40px) rotate(-15deg); }
       }
 
       body::before {
@@ -159,10 +202,19 @@
         border-radius: var(--radius);
         padding: 26px 26px 24px;
         background: var(--panel);
-        backdrop-filter: blur(6px);
-        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 
+          0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06),
+          var(--shadow);
+        border: 1px solid rgba(255, 255, 255, 0.3);
         display: grid;
         gap: 16px;
+      }
+
+      [data-theme="dark"] .hero-right {
+        border-color: rgba(255, 255, 255, 0.08);
       }
 
       .section-label {
@@ -191,14 +243,29 @@
       .work-card {
         padding: 24px 26px;
         border-radius: var(--radius);
-        background: rgba(255, 255, 255, 0.72);
-        border: 1px solid rgba(29, 25, 18, 0.12);
-        box-shadow: 0 16px 32px rgba(31, 22, 12, 0.12);
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         display: flex;
         flex-direction: column;
         gap: 12px;
         position: relative;
         overflow: hidden;
+        transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+      }
+      
+      [data-theme="dark"] .work-card {
+        background: rgba(40, 36, 32, 0.6);
+        border-color: rgba(255, 255, 255, 0.08);
+      }
+
+      .work-card:hover {
+        transform: translateY(-4px) scale(1.005);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+        border-color: rgba(255, 255, 255, 0.6);
+        z-index: 10;
       }
 
       .work-card::after {
@@ -220,6 +287,13 @@
         gap: 12px;
         font-weight: 600;
         font-size: 1.2rem;
+      }
+      
+      .work-icon {
+        width: 24px;
+        height: 24px;
+        color: var(--accent);
+        flex-shrink: 0;
       }
 
       .badge {
@@ -261,9 +335,27 @@
         align-items: baseline;
         padding: 14px 18px;
         border-radius: 16px;
-        background: rgba(255, 255, 255, 0.6);
-        border: 1px solid rgba(29, 25, 18, 0.12);
+        background: rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         gap: 18px;
+        transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+        cursor: pointer;
+      }
+
+      [data-theme="dark"] .writing-item {
+        background: rgba(40, 36, 32, 0.4);
+        border-color: rgba(255, 255, 255, 0.05);
+      }
+
+      .writing-item:not(.coming-soon):hover {
+        background: rgba(255, 255, 255, 0.6);
+        transform: translateX(4px);
+        border-color: rgba(255, 255, 255, 0.4);
+      }
+      
+      [data-theme="dark"] .writing-item:not(.coming-soon):hover {
+        background: rgba(60, 56, 52, 0.6);
+        border-color: rgba(255, 255, 255, 0.15);
       }
 
       .writing-item span {
@@ -280,9 +372,20 @@
       .pill {
         padding: 10px 16px;
         border-radius: 999px;
-        border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.4);
         font-weight: 500;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+      }
+
+      [data-theme="dark"] .pill {
+         background: rgba(40, 36, 32, 0.4);
+         border-color: rgba(255, 255, 255, 0.05);
+      }
+
+      .pill:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent-2);
       }
 
       .interests {
@@ -294,9 +397,25 @@
       .interest {
         padding: 12px 16px;
         border-radius: 14px;
-        background: rgba(255, 255, 255, 0.65);
-        border: 1px solid rgba(29, 25, 18, 0.12);
+        background: rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         font-size: 0.95rem;
+        transition: transform 0.2s ease, background 0.2s ease;
+        cursor: default;
+      }
+
+      [data-theme="dark"] .interest {
+         background: rgba(40, 36, 32, 0.4);
+         border-color: rgba(255, 255, 255, 0.05);
+      }
+
+      .interest:hover {
+        transform: scale(1.02);
+        background: rgba(255, 255, 255, 0.65);
+      }
+
+      [data-theme="dark"] .interest:hover {
+        background: rgba(60, 56, 52, 0.6);
       }
 
       footer {
@@ -360,17 +479,29 @@
         animation-delay: var(--delay, 0s);
       }
 
-      .work-card:nth-child(1) {
-        --delay: 0.12s;
-      }
+      .work-card:nth-child(1) { --delay: 0.12s; }
+      .work-card:nth-child(2) { --delay: 0.24s; }
+      .work-card:nth-child(3) { --delay: 0.36s; }
 
-      .work-card:nth-child(2) {
-        --delay: 0.24s;
+      .writing-item {
+        animation: rise 0.8s ease both;
+        animation-delay: 0.4s; /* Base delay after section */
       }
+      .writing-item:nth-child(1) { animation-delay: 0.45s; }
+      .writing-item:nth-child(2) { animation-delay: 0.55s; }
+      .writing-item:nth-child(3) { animation-delay: 0.65s; }
 
-      .work-card:nth-child(3) {
-        --delay: 0.36s;
+      .interest {
+        animation: rise 0.8s ease both;
+        animation-delay: 0.5s;
       }
+      /* Stagger interests automatically */
+      .interest:nth-child(1) { animation-delay: 0.50s; }
+      .interest:nth-child(2) { animation-delay: 0.55s; }
+      .interest:nth-child(3) { animation-delay: 0.60s; }
+      .interest:nth-child(4) { animation-delay: 0.65s; }
+      .interest:nth-child(5) { animation-delay: 0.70s; }
+      .interest:nth-child(6) { animation-delay: 0.75s; }
 
       @media (prefers-reduced-motion: reduce) {
         * {
@@ -459,6 +590,10 @@
     </style>
   </head>
   <body>
+    <div class="blobs" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+    </div>
     <a href="#main-content" class="skip-link">Skip to content</a>
 
     <button class="theme-toggle" aria-label="Toggle dark mode" type="button">
@@ -494,6 +629,7 @@
         <div class="work-grid">
           <article class="work-card">
             <div class="work-title">
+              <svg class="work-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
               FreeSpace Open — Vulkan Backend
               <span class="badge">Shipped</span>
             </div>
@@ -507,7 +643,10 @@
             <div class="tag-row">C++ · Vulkan · GLSL · CMake</div>
           </article>
           <article class="work-card">
-            <div class="work-title">NullPath</div>
+            <div class="work-title">
+              <svg class="work-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              NullPath
+            </div>
             <p class="work-desc">
               CUDA/C++ null geodesic tracer for black hole visualization. Renders
               photon trajectories through curved spacetime with bit-exact parity
@@ -516,7 +655,10 @@
             <div class="tag-row">C++ · CUDA · Differential Geometry</div>
           </article>
           <article class="work-card">
-            <div class="work-title">Healthcare Claims Platform</div>
+            <div class="work-title">
+              <svg class="work-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg>
+              Healthcare Claims Platform
+            </div>
             <p class="work-desc">
               Distributed systems work in price transparency and regulatory
               compliance. Kafka middleware, vendor API validation, load testing,
@@ -573,10 +715,10 @@
 
     <script>
       (function() {
+        // Theme toggle logic
         const toggle = document.querySelector('.theme-toggle');
         const html = document.documentElement;
 
-        // Check for saved preference or system preference
         const saved = localStorage.getItem('theme');
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
@@ -589,6 +731,29 @@
           const newTheme = isDark ? 'light' : 'dark';
           html.setAttribute('data-theme', newTheme);
           localStorage.setItem('theme', newTheme);
+        });
+
+        // Tilt effect for work cards
+        const cards = document.querySelectorAll('.work-card');
+
+        cards.forEach(card => {
+          card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const rotateX = ((y - centerY) / centerY) * -2; // Max rotation deg
+            const rotateY = ((x - centerX) / centerX) * 2;
+
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+          });
+
+          card.addEventListener('mouseleave', () => {
+            card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+          });
         });
       })();
     </script>
