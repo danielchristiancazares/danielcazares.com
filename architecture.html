@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Invariant-First Architecture - Daniel Cazares</title>
+    <meta name="description" content="Make invalid states unrepresentable. A guide to designing types where invalid states cannot mathematically exist." />
+    <meta name="author" content="Daniel Cazares" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Invariant-First Architecture - Daniel Cazares" />
+    <meta property="og:description" content="Make invalid states unrepresentable. A guide to designing types where invalid states cannot mathematically exist." />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://danielcazares.com/architecture.html" />
+
+    <!-- Favicon (data URI for a simple "D") -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>D</text></svg>" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --paper: #f6f1e6;
+        --ink: #1d1912;
+        --muted: #736a5c;
+        --accent: #d45a3a;
+        --accent-2: #1f6f80;
+        --line: rgba(29, 25, 18, 0.14);
+        --panel: rgba(255, 255, 255, 0.65);
+        --shadow: 0 22px 50px rgba(31, 22, 12, 0.18);
+        --radius: 22px;
+        --bg-grad-1: #fdebd0;
+        --bg-grad-2: #f7c9ad;
+        --bg-grad-3: #f8f3e8;
+        --bg-grad-4: #efe6d6;
+        --pattern-color: rgba(29, 25, 18, 0.035);
+        --code-bg: rgba(29, 25, 18, 0.06);
+      }
+
+      [data-theme="dark"] {
+        --paper: #1a1816;
+        --ink: #e8e4dc;
+        --muted: #9a948a;
+        --accent: #e8755a;
+        --accent-2: #4db3c7;
+        --line: rgba(255, 255, 255, 0.12);
+        --panel: rgba(40, 36, 32, 0.75);
+        --shadow: 0 22px 50px rgba(0, 0, 0, 0.4);
+        --bg-grad-1: #2a2420;
+        --bg-grad-2: #302824;
+        --bg-grad-3: #1e1a18;
+        --bg-grad-4: #161412;
+        --pattern-color: rgba(255, 255, 255, 0.02);
+        --code-bg: rgba(255, 255, 255, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        min-height: 100vh;
+        font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+        color: var(--ink);
+        background: transparent;
+        position: relative;
+        overflow-x: hidden;
+        transition: color 0.3s ease;
+      }
+
+      .blobs {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        overflow: hidden;
+        pointer-events: none;
+        background: linear-gradient(180deg, var(--bg-grad-3) 0%, var(--bg-grad-4) 100%);
+        transition: background 0.3s ease;
+      }
+
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.6;
+      }
+
+      .blob-1 {
+        top: -10%;
+        left: -10%;
+        width: 50vw;
+        height: 50vw;
+        background: var(--bg-grad-1);
+        animation: float1 25s infinite alternate ease-in-out;
+      }
+
+      .blob-2 {
+        bottom: 20%;
+        right: -10%;
+        width: 40vw;
+        height: 40vw;
+        background: var(--bg-grad-2);
+        animation: float2 20s infinite alternate ease-in-out;
+      }
+
+      @keyframes float1 {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        100% { transform: translate(100px, 50px) rotate(20deg); }
+      }
+
+      @keyframes float2 {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        100% { transform: translate(-80px, -40px) rotate(-15deg); }
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: repeating-linear-gradient(
+          135deg,
+          var(--pattern-color) 0,
+          var(--pattern-color) 1px,
+          transparent 1px,
+          transparent 12px
+        );
+        pointer-events: none;
+        opacity: 0.6;
+        z-index: 0;
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      a:hover {
+        color: var(--accent-2);
+      }
+
+      main {
+        position: relative;
+        z-index: 1;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 72px 28px 80px;
+      }
+
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 40px;
+        font-weight: 500;
+        color: var(--muted);
+        transition: color 0.2s ease, transform 0.2s ease;
+      }
+
+      .back-link:hover {
+        color: var(--ink);
+        transform: translateX(-4px);
+      }
+
+      .back-link svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      article {
+        background: var(--panel);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: var(--radius);
+        padding: 48px 42px;
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06),
+          var(--shadow);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        animation: rise 0.8s ease both;
+      }
+
+      [data-theme="dark"] article {
+        border-color: rgba(255, 255, 255, 0.08);
+      }
+
+      h1 {
+        font-family: "Fraunces", "Georgia", serif;
+        font-weight: 700;
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        letter-spacing: 0.02em;
+        margin-bottom: 16px;
+        line-height: 1.2;
+      }
+
+      .subtitle {
+        font-size: 1.1rem;
+        color: var(--muted);
+        margin-bottom: 40px;
+        font-style: italic;
+      }
+
+      h2 {
+        font-family: "Fraunces", "Georgia", serif;
+        font-size: 1.6rem;
+        letter-spacing: 0.02em;
+        margin-top: 48px;
+        margin-bottom: 20px;
+        color: var(--ink);
+      }
+
+      h2:first-of-type {
+        margin-top: 0;
+      }
+
+      h3 {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-top: 32px;
+        margin-bottom: 12px;
+        color: var(--ink);
+      }
+
+      p {
+        line-height: 1.75;
+        margin-bottom: 16px;
+        color: var(--ink);
+      }
+
+      strong {
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      em {
+        font-style: italic;
+      }
+
+      hr {
+        border: none;
+        height: 1px;
+        background: var(--line);
+        margin: 40px 0;
+      }
+
+      ul, ol {
+        margin-bottom: 16px;
+        padding-left: 24px;
+      }
+
+      li {
+        line-height: 1.75;
+        margin-bottom: 8px;
+      }
+
+      blockquote {
+        border-left: 3px solid var(--accent);
+        padding-left: 20px;
+        margin: 24px 0;
+        font-style: italic;
+        color: var(--muted);
+      }
+
+      code {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.9em;
+        background: var(--code-bg);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+
+      pre {
+        background: var(--code-bg);
+        border-radius: 12px;
+        padding: 20px 24px;
+        overflow-x: auto;
+        margin: 20px 0;
+        border: 1px solid var(--line);
+      }
+
+      pre code {
+        background: none;
+        padding: 0;
+        font-size: 0.85rem;
+        line-height: 1.6;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 24px 0;
+        font-size: 0.95rem;
+      }
+
+      th, td {
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+      }
+
+      th {
+        font-weight: 600;
+        color: var(--ink);
+        background: var(--code-bg);
+      }
+
+      td {
+        color: var(--muted);
+      }
+
+      td:first-child {
+        color: var(--ink);
+        font-weight: 500;
+      }
+
+      .section-divider {
+        text-align: center;
+        margin: 48px 0;
+        color: var(--muted);
+        font-size: 1.5rem;
+        letter-spacing: 0.5em;
+      }
+
+      .highlight-box {
+        background: rgba(212, 90, 58, 0.08);
+        border: 1px solid rgba(212, 90, 58, 0.2);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin: 24px 0;
+      }
+
+      [data-theme="dark"] .highlight-box {
+        background: rgba(232, 117, 90, 0.1);
+        border-color: rgba(232, 117, 90, 0.2);
+      }
+
+      .highlight-box p:last-child {
+        margin-bottom: 0;
+      }
+
+      /* Theme toggle */
+      .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 44px;
+        height: 44px;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: var(--panel);
+        color: var(--ink);
+        backdrop-filter: blur(6px);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        z-index: 50;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .theme-toggle:hover {
+        transform: scale(1.08);
+        box-shadow: var(--shadow);
+      }
+
+      .theme-toggle .icon-sun,
+      .theme-toggle .icon-moon {
+        position: absolute;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+
+      .theme-toggle .icon-moon {
+        opacity: 0;
+        transform: rotate(-90deg);
+      }
+
+      [data-theme="dark"] .theme-toggle .icon-sun {
+        opacity: 0;
+        transform: rotate(90deg);
+      }
+
+      [data-theme="dark"] .theme-toggle .icon-moon {
+        opacity: 1;
+        transform: rotate(0);
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 600px) {
+        main {
+          padding: 56px 16px 70px;
+        }
+
+        article {
+          padding: 32px 24px;
+        }
+
+        pre {
+          padding: 16px;
+          margin-left: -8px;
+          margin-right: -8px;
+          border-radius: 8px;
+        }
+
+        table {
+          font-size: 0.85rem;
+        }
+
+        th, td {
+          padding: 10px 12px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+
+      /* Accessibility: Focus states */
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+
+      .skip-link {
+        position: absolute;
+        top: -100px;
+        left: 16px;
+        padding: 12px 18px;
+        background: var(--ink);
+        color: var(--paper);
+        border-radius: 8px;
+        font-weight: 600;
+        z-index: 100;
+        transition: top 0.2s ease;
+      }
+
+      .skip-link:focus {
+        top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="blobs" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+    </div>
+    <a href="#main-content" class="skip-link">Skip to content</a>
+
+    <button class="theme-toggle" aria-label="Toggle dark mode" type="button">
+      <span class="icon-sun" aria-hidden="true">&#9788;</span>
+      <span class="icon-moon" aria-hidden="true">&#9790;</span>
+    </button>
+
+    <main id="main-content">
+      <a href="/" class="back-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        Back to home
+      </a>
+
+      <article>
+        <h1>Invariant-First Architecture</h1>
+        <p class="subtitle">Absorb the principle, not the syntax.</p>
+
+        <h2>How to Read This Document</h2>
+        <p>The examples exist to illustrate structural concepts, not to be copied outright. The principle behind every pattern is <strong>Correctness by Construction</strong>. If you understand this, you can derive the correct implementation for any situation. If you are looking for escape hatches in the examples, you are missing the point.</p>
+
+        <h2>The Core Idea</h2>
+        <div class="highlight-box">
+          <p><strong>Make invalid states unrepresentable.</strong></p>
+        </div>
+        <p>We do not write code to "handle" invalid states; we design types so that invalid states cannot mathematically exist. Do not rely on programmer discipline, runtime checks, or documentation.</p>
+        <p>If invalid code compiles, the type definitions do not accurately reflect the domain. Successful compilation must be sufficient proof of structural validity.</p>
+
+        <hr />
+
+        <h2>Typestate: The ShuffledDeck Pattern</h2>
+        <h3>The Problem</h3>
+        <p>Temporal coupling hidden in side effects.</p>
+        <p>Games require a shuffled deck. A <code>Deck</code> object that <em>might</em> be shuffled is a lie. Nothing prevents <code>startGame(unshuffledDeck)</code>.</p>
+
+        <h3>The Semantic Fix</h3>
+        <p>The <code>shuffle</code> function is not an action; it is a <strong>transition</strong>. It consumes the precursor state and emits the valid state.</p>
+
+<pre><code>class Deck { ... }; // Represents a raw deck
+
+class ShuffledDeck {
+    friend ShuffledDeck shuffle(Deck&&); // Consumption
+    ShuffledDeck() = default;
+};
+
+// The Transition: Consumes 'Deck', proves 'ShuffledDeck' exists
+[[nodiscard]] ShuffledDeck shuffle(Deck&& d);
+
+// The Consumer: Physically impossible to call without the proof
+void startGame(ShuffledDeck d);</code></pre>
+
+        <h3>The Reality</h3>
+        <p>The types now mirror the physics of the domain. <code>Deck</code> and <code>ShuffledDeck</code> are not just different classes; they are different universes of validity. Move semantics prevent "use-after-transition," ensuring the timeline allows no forks.</p>
+        <p><strong>The Return Type is the Proof of History.</strong></p>
+
+        <hr />
+
+        <h2>Parametricity (Enforced Agnosticism)</h2>
+        <h3>The Problem</h3>
+        <p>Inspection breeds coupling.</p>
+        <p>A function taking <code>const vector&lt;Card&gt;&amp;</code> has too much power. It can inspect cards, log values, or branch logic based on specific suits.</p>
+
+        <h3>The Semantic Fix</h3>
+        <p>Polymorphism is not just code reuse; it is Structural Blindness.</p>
+
+<pre><code>template &lt;typename T&gt;
+T get_first(const std::vector&lt;T&gt;& list);</code></pre>
+
+        <h3>The Semantic Guarantee</h3>
+        <p>By quantifying over <code>T</code>, we strip the implementation of the ability to inspect the data. The signature <code>forall A. [A] -&gt; A</code> constrains the implementation to pure data movement. It operates on the structure of the container, never the nature of the content.</p>
+        <p><strong>The constraint forces the correct implementation to be the path of least resistance.</strong></p>
+
+        <hr />
+
+        <h2>Constrained Generics (Call-Site Rejection)</h2>
+        <p>Parametricity blinds the implementation (what it can do). Constraints filter the call site (what it accepts).</p>
+
+<pre><code>// Unconstrained: Accepts garbage, fails deep inside logic
+template &lt;typename T&gt;
+void serialize(const T& obj);
+
+// Constrained: Rejects garbage at the boundary
+template &lt;typename T&gt;
+    requires Serializable&lt;T&gt;
+void serialize(const T& obj);</code></pre>
+
+        <p>SFINAE (and Concepts) moves the rejection from inside the template instantiation to the signature. The function literally does not exist for types that cannot satisfy it.</p>
+        <p><strong>The Boundary Principle:</strong> Invalid instantiations must not propagate past the signature.</p>
+
+        <hr />
+
+        <h2>The Shared Foundation</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Pattern</th>
+              <th>The Semantic Guarantee</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Typestate</td>
+              <td>Proof of History. (<code>B</code> cannot exist unless <code>A</code> happened first).</td>
+            </tr>
+            <tr>
+              <td>Parametricity</td>
+              <td>Implementation Agnosticism. (Logic cannot depend on data values).</td>
+            </tr>
+            <tr>
+              <td>Constraints</td>
+              <td>Call-Site Rejection. (Invalid inputs are structurally incompatible).</td>
+            </tr>
+            <tr>
+              <td>Move Semantics</td>
+              <td>Linearity. (Resource is at exactly one place at one time).</td>
+            </tr>
+            <tr>
+              <td>State as Location</td>
+              <td>Synchronization. (Flag and map cannot disagree).</td>
+            </tr>
+            <tr>
+              <td>Capability Tokens</td>
+              <td>Phase Validity. (Code cannot run outside its time slot).</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <hr />
+
+        <h2>Ownership is Coordination</h2>
+        <div class="highlight-box">
+          <p><strong>Make coordination unnecessary by making ownership complete.</strong></p>
+        </div>
+        <p>If two pieces of code must "agree" on the state of a resource, the architecture is flawed. One object should own the resource.</p>
+        <ul>
+          <li><strong>Fragmented Ownership:</strong> Function takes an ID and a pointer, tries to fill the pointer. Caller owns memory, Callee owns logic. Result: Boolean return codes and undefined states.</li>
+          <li><strong>Complete Ownership:</strong> Function takes an ID, returns a fully constructed object or a boundary error. The core never receives a "maybe."</li>
+        </ul>
+
+        <h3>Corollary: The Retry Fallacy</h3>
+        <p>Retry loops inside the core are consensus failures—logic attempting to synchronize with itself. If you have to ask "did that work?" and try again, two components have different views of reality. Fix the ownership scope so disagreement is impossible.</p>
+        <p>(Retries at the boundary are adaptation to an unreliable world. Retries inside are architecture rot.)</p>
+
+        <hr />
+
+        <h2>Data Providers Don't Decide (Mechanism vs. Policy)</h2>
+        <p><strong>Providers expose Mechanism (facts); Callers decide Policy (actions).</strong></p>
+        <p>When a data provider returns a fallback value (e.g., a default texture) because an ID was missing, it is usurping the caller's agency.</p>
+        <ul>
+          <li><strong>Wrong:</strong> <code>TextureManager::get(id)</code> returns a default texture. The Manager decides "The game must go on."</li>
+          <li><strong>Right:</strong> <code>TextureManager::available()</code> returns a read-only view of what exists. The Caller decides "I need this texture; if missing, I will trigger a loading screen."</li>
+        </ul>
+        <p>The texture manager herds cats to food—it makes textures available. It doesn't need to know if each cat is hungry. Cats (callers) can see what's available and decide for themselves.</p>
+        <p><strong>Semantic Rule:</strong> If a function returns "Fallback OR Real Data" without the type system distinguishing them, you have hidden a decision inside a data access.</p>
+
+        <hr />
+
+        <h2>State as Location</h2>
+        <div class="highlight-box">
+          <p><strong>Existence is state.</strong></p>
+        </div>
+        <p>Do not use <code>enum State</code> or <code>bool is_active</code> to track lifecycle. An object's state is defined by where it is, not what it contains.</p>
+        <ul>
+          <li><strong>Wrong:</strong> A list of objects with status flags (<code>Pending</code>, <code>Resident</code>). You must filter the list to find valid ones.</li>
+          <li><strong>Right:</strong> Two containers: <code>pending_uploads</code> and <code>resident_textures</code>.</li>
+        </ul>
+        <p>To change state, you move the object from one container to another.</p>
+        <p><strong>Proof:</strong> If an object is in <code>m_resident</code>, it is resident. There is no flag to de-sync. The data structure <em>is</em> the state machine.</p>
+        <p><strong>Topology is Truth.</strong></p>
+
+        <hr />
+
+        <h2>Capability Tokens</h2>
+        <p><strong>Capability tokens are "Tickets to Ride."</strong></p>
+        <p>If an operation is only valid during a specific phase (e.g., Rendering), require a token that only exists during that phase.</p>
+
+<pre><code>void submitDrawCall(const RenderPass& proof, Mesh m);</code></pre>
+
+        <p>You do not need <code>assert(is_rendering)</code>. The code physically cannot be called unless you possess a <code>RenderPass</code> object. If the token exists on the stack, the phase is active.</p>
+
+        <hr />
+
+        <h2>Boundaries vs. Internals</h2>
+        <div class="highlight-box">
+          <p><strong>Parse, don't validate.</strong></p>
+        </div>
+        <p>A system has a Crust (Boundary) and a Core (Internal).</p>
+        <ul>
+          <li><strong>The Crust:</strong> Accepts messy, optional input. It parses (converts) this into strict Types.</li>
+          <li><strong>The Core:</strong> Operates on strict Types. No <code>optional</code>, no <code>nullptr</code> checking.</li>
+        </ul>
+        <p><strong>The Disease:</strong> Passing <code>std::optional</code> or <code>ptr*</code> deep into the core logic. This forces every internal function to handle the "missing" case, spreading the complexity of the boundary throughout the entire application.</p>
+        <ul>
+          <li><strong>Domain-Optional:</strong> A legitimate absence (e.g., User has no middle name).</li>
+          <li><strong>State-Optional:</strong> A leaky abstraction (e.g., Object exists but <code>init()</code> hasn't been called). Eliminate state-optionality.</li>
+        </ul>
+
+        <hr />
+
+        <h2>On Assertions</h2>
+        <blockquote>
+          <p>"An assertion is a confession: you let the wrong world exist, and now you're policing its borders."</p>
+        </blockquote>
+        <p>Guards don't prevent invalid states. They catch invalid states that your types already permitted. The types are the border. If you're writing <code>assert</code>, you've already let the enemy inside the walls.</p>
+        <p><strong>Don't build a border patrol. Build a world with no illegal crossings.</strong></p>
+
+        <hr />
+
+        <h2>The Death List</h2>
+        <p>When reviewing code, interpret these patterns as structural failures:</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Pattern</th>
+              <th>The Semantic Flaw</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>State-Dependent Validity</td>
+              <td>Fake Sum Type. An enum tag that implies which fields are inhabited is a sum type implemented unsafely. Use distinct types or <code>variant</code>.</td>
+            </tr>
+            <tr>
+              <td>Inhabitant Branching</td>
+              <td>Lying Signature. Checks like <code>if (ptr)</code> deep in logic mean the function requested a <code>T</code> but accepted a <code>Maybe T</code>.</td>
+            </tr>
+            <tr>
+              <td>Sentinel Values</td>
+              <td>In-Band Signaling. <code>-1</code> or <code>""</code> masquerading as valid types.</td>
+            </tr>
+            <tr>
+              <td>Init/Update Methods</td>
+              <td>Step-Coupling. Constructors must complete initialization.</td>
+            </tr>
+            <tr>
+              <td>Retry Loops (in core)</td>
+              <td>Consensus Failure. Logic attempting to synchronize with itself.</td>
+            </tr>
+            <tr>
+              <td>Protective Guards</td>
+              <td>Normalization of Deviance. <code>assert(impossible)</code> protects invalid state from being noticed.</td>
+            </tr>
+            <tr>
+              <td>GetOrDefault</td>
+              <td>Policy Leak. Data provider making decisions for the consumer.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <hr />
+
+        <h2>The Litmus Test: Memory Layout</h2>
+        <p>Not all enums are bad. Apply the <strong>Memory Layout Test</strong> to distinguish "Behavior" from "State."</p>
+        <ul>
+          <li>
+            <strong>Behavioral Configuration (Valid):</strong> <code>enum AI { Aggressive, Defensive }</code>
+            <ul>
+              <li>Does changing this enum invalidate any member variables? <strong>No.</strong></li>
+              <li>The object structure remains identical; only the algorithm changes.</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Structural State (Invalid):</strong> <code>enum Connection { Disconnected, Connected }</code>
+            <ul>
+              <li>Does changing this enum invalidate <code>m_socketHandle</code>? <strong>Yes.</strong></li>
+              <li>This is a Sum Type masquerading as a Product Type. You are manually managing a relationship the compiler doesn't see.</li>
+            </ul>
+          </li>
+        </ul>
+        <p><strong>Rule:</strong> If the validity of data depends on the value of a flag, that flag must not exist. The data structure itself must change (via <code>variant</code> or move to a new type).</p>
+
+        <hr />
+
+        <h2>Approximations in C++</h2>
+        <p>C++ lacks dependent types, has weak parametricity, and permits escape hatches. We approximate the ideal:</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Ideal</th>
+              <th>C++ Approximation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Typestate</td>
+              <td>Move-only types, private constructors, friend factories.</td>
+            </tr>
+            <tr>
+              <td>Linear Types</td>
+              <td><code>= delete</code> copy, move-only, <code>[[nodiscard]]</code>.</td>
+            </tr>
+            <tr>
+              <td>Parametricity</td>
+              <td>Templates with minimal constraints.</td>
+            </tr>
+            <tr>
+              <td>Bounded Polymorphism</td>
+              <td>SFINAE, <code>requires</code> clauses, Concepts.</td>
+            </tr>
+            <tr>
+              <td>Capability Tokens</td>
+              <td>Structs with private constructors, <code>friend</code> access.</td>
+            </tr>
+            <tr>
+              <td>State as Location</td>
+              <td>Separate containers per state.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Lock the door anyway.</h3>
+        <p>"C++ can't prevent X" is not an excuse to leave X easy. If you can't eliminate an invalid state, make it awkward to reach:</p>
+        <ul>
+          <li><strong>The Zombie State:</strong> C++ moves are non-destructive (source remains). Use <code>unique_ptr</code> to force emptiness, or destructive <code>consume() &&</code> methods.</li>
+          <li><strong>Explicit Intent:</strong> Use rvalue-qualified methods to force "use-once" semantics where possible.</li>
+        </ul>
+        <p>Saying "the language can't enforce it perfectly" is like saying "my car door doesn't prevent all theft." True—but you still lock it.</p>
+
+        <hr />
+
+        <h2>The Test</h2>
+        <p>When reviewing a design, do not ask:</p>
+        <blockquote><p>"What happens if someone passes the wrong data?"</p></blockquote>
+        <p>Ask:</p>
+        <blockquote><p>"How do I make passing the wrong data a compile error?"</p></blockquote>
+        <p>We do not want to detect invalid state at runtime. We want to define invalid state out of existence.</p>
+
+        <hr />
+
+        <h2>Not Acceptable</h2>
+        <p>Objections based on "simplicity" usually conflate ease of writing with simplicity of reasoning.</p>
+        <ul>
+          <li>Writing a global boolean is "easy."</li>
+          <li>Debugging a race condition caused by that boolean is "complex."</li>
+        </ul>
+        <p>We optimize for the latter. The runtime cost of a container move is negligible compared to the cost of debugging a state mismatch that only manifests in production.</p>
+
+        <div class="section-divider">···</div>
+
+        <p><strong>The goal is a codebase where "It compiles" is a high-confidence statement of structural integrity.</strong></p>
+      </article>
+    </main>
+
+    <script>
+      (function() {
+        // Theme toggle logic
+        const toggle = document.querySelector('.theme-toggle');
+        const html = document.documentElement;
+
+        const saved = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (saved === 'dark' || (!saved && prefersDark)) {
+          html.setAttribute('data-theme', 'dark');
+        }
+
+        toggle.addEventListener('click', function() {
+          const isDark = html.getAttribute('data-theme') === 'dark';
+          const newTheme = isDark ? 'light' : 'dark';
+          html.setAttribute('data-theme', newTheme);
+          localStorage.setItem('theme', newTheme);
+        });
+      })();
+    </script>
+  </body>
+</html>
