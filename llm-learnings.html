@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LLM Learnings - Daniel Cazares</title>
+    <meta name="description" content="A collection of practical insights for working with large language models effectively." />
+    <meta name="author" content="Daniel Cazares" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="LLM Learnings - Daniel Cazares" />
+    <meta property="og:description" content="A collection of practical insights for working with large language models effectively." />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://danielcazares.com/llm-learnings.html" />
+
+    <!-- Favicon (data URI for a simple "D") -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>D</text></svg>" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --paper: #f6f1e6;
+        --ink: #1d1912;
+        --muted: #736a5c;
+        --accent: #d45a3a;
+        --accent-2: #1f6f80;
+        --line: rgba(29, 25, 18, 0.14);
+        --panel: rgba(255, 255, 255, 0.65);
+        --shadow: 0 22px 50px rgba(31, 22, 12, 0.18);
+        --radius: 22px;
+        --bg-grad-1: #fdebd0;
+        --bg-grad-2: #f7c9ad;
+        --bg-grad-3: #f8f3e8;
+        --bg-grad-4: #efe6d6;
+        --pattern-color: rgba(29, 25, 18, 0.035);
+        --code-bg: rgba(29, 25, 18, 0.06);
+      }
+
+      [data-theme="dark"] {
+        --paper: #1a1816;
+        --ink: #e8e4dc;
+        --muted: #9a948a;
+        --accent: #e8755a;
+        --accent-2: #4db3c7;
+        --line: rgba(255, 255, 255, 0.12);
+        --panel: rgba(40, 36, 32, 0.75);
+        --shadow: 0 22px 50px rgba(0, 0, 0, 0.4);
+        --bg-grad-1: #2a2420;
+        --bg-grad-2: #302824;
+        --bg-grad-3: #1e1a18;
+        --bg-grad-4: #161412;
+        --pattern-color: rgba(255, 255, 255, 0.02);
+        --code-bg: rgba(255, 255, 255, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        min-height: 100vh;
+        font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+        color: var(--ink);
+        background: transparent;
+        position: relative;
+        overflow-x: hidden;
+        transition: color 0.3s ease;
+      }
+
+      .blobs {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        overflow: hidden;
+        pointer-events: none;
+        background: linear-gradient(180deg, var(--bg-grad-3) 0%, var(--bg-grad-4) 100%);
+        transition: background 0.3s ease;
+      }
+
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.6;
+      }
+
+      .blob-1 {
+        top: -10%;
+        left: -10%;
+        width: 50vw;
+        height: 50vw;
+        background: var(--bg-grad-1);
+        animation: float1 25s infinite alternate ease-in-out;
+      }
+
+      .blob-2 {
+        bottom: 20%;
+        right: -10%;
+        width: 40vw;
+        height: 40vw;
+        background: var(--bg-grad-2);
+        animation: float2 20s infinite alternate ease-in-out;
+      }
+
+      @keyframes float1 {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        100% { transform: translate(100px, 50px) rotate(20deg); }
+      }
+
+      @keyframes float2 {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        100% { transform: translate(-80px, -40px) rotate(-15deg); }
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: repeating-linear-gradient(
+          135deg,
+          var(--pattern-color) 0,
+          var(--pattern-color) 1px,
+          transparent 1px,
+          transparent 12px
+        );
+        pointer-events: none;
+        opacity: 0.6;
+        z-index: 0;
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      a:hover {
+        color: var(--accent-2);
+      }
+
+      main {
+        position: relative;
+        z-index: 1;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 72px 28px 80px;
+      }
+
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 40px;
+        font-weight: 500;
+        color: var(--muted);
+        transition: color 0.2s ease, transform 0.2s ease;
+      }
+
+      .back-link:hover {
+        color: var(--ink);
+        transform: translateX(-4px);
+      }
+
+      .back-link svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      article {
+        background: var(--panel);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: var(--radius);
+        padding: 48px 42px;
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06),
+          var(--shadow);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        animation: rise 0.8s ease both;
+      }
+
+      [data-theme="dark"] article {
+        border-color: rgba(255, 255, 255, 0.08);
+      }
+
+      h1 {
+        font-family: "Fraunces", "Georgia", serif;
+        font-weight: 700;
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        letter-spacing: 0.02em;
+        margin-bottom: 16px;
+        line-height: 1.2;
+      }
+
+      .subtitle {
+        font-size: 1.1rem;
+        color: var(--muted);
+        margin-bottom: 40px;
+        font-style: italic;
+      }
+
+      h2 {
+        font-family: "Fraunces", "Georgia", serif;
+        font-size: 1.6rem;
+        letter-spacing: 0.02em;
+        margin-top: 48px;
+        margin-bottom: 20px;
+        color: var(--ink);
+      }
+
+      h2:first-of-type {
+        margin-top: 0;
+      }
+
+      h3 {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-top: 32px;
+        margin-bottom: 12px;
+        color: var(--ink);
+      }
+
+      p {
+        line-height: 1.75;
+        margin-bottom: 16px;
+        color: var(--ink);
+      }
+
+      strong {
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      em {
+        font-style: italic;
+      }
+
+      hr {
+        border: none;
+        height: 1px;
+        background: var(--line);
+        margin: 40px 0;
+      }
+
+      ul, ol {
+        margin-bottom: 16px;
+        padding-left: 24px;
+      }
+
+      li {
+        line-height: 1.75;
+        margin-bottom: 8px;
+      }
+
+      li ul, li ol {
+        margin-top: 8px;
+        margin-bottom: 8px;
+      }
+
+      blockquote {
+        border-left: 3px solid var(--accent);
+        padding-left: 20px;
+        margin: 24px 0;
+        font-style: italic;
+        color: var(--muted);
+      }
+
+      code {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.9em;
+        background: var(--code-bg);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+
+      pre {
+        background: var(--code-bg);
+        border-radius: 12px;
+        padding: 20px 24px;
+        overflow-x: auto;
+        margin: 20px 0;
+        border: 1px solid var(--line);
+      }
+
+      pre code {
+        background: none;
+        padding: 0;
+        font-size: 0.85rem;
+        line-height: 1.6;
+      }
+
+      .highlight-box {
+        background: rgba(212, 90, 58, 0.08);
+        border: 1px solid rgba(212, 90, 58, 0.2);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin: 24px 0;
+      }
+
+      [data-theme="dark"] .highlight-box {
+        background: rgba(232, 117, 90, 0.1);
+        border-color: rgba(232, 117, 90, 0.2);
+      }
+
+      .highlight-box p:last-child {
+        margin-bottom: 0;
+      }
+
+      .section-divider {
+        text-align: center;
+        margin: 48px 0;
+        color: var(--muted);
+        font-size: 1.5rem;
+        letter-spacing: 0.5em;
+      }
+
+      /* Theme toggle */
+      .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 44px;
+        height: 44px;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: var(--panel);
+        color: var(--ink);
+        backdrop-filter: blur(6px);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        z-index: 50;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .theme-toggle:hover {
+        transform: scale(1.08);
+        box-shadow: var(--shadow);
+      }
+
+      .theme-toggle .icon-sun,
+      .theme-toggle .icon-moon {
+        position: absolute;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+
+      .theme-toggle .icon-moon {
+        opacity: 0;
+        transform: rotate(-90deg);
+      }
+
+      [data-theme="dark"] .theme-toggle .icon-sun {
+        opacity: 0;
+        transform: rotate(90deg);
+      }
+
+      [data-theme="dark"] .theme-toggle .icon-moon {
+        opacity: 1;
+        transform: rotate(0);
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 600px) {
+        main {
+          padding: 56px 16px 70px;
+        }
+
+        article {
+          padding: 32px 24px;
+        }
+
+        pre {
+          padding: 16px;
+          margin-left: -8px;
+          margin-right: -8px;
+          border-radius: 8px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+
+      /* Accessibility: Focus states */
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+
+      .skip-link {
+        position: absolute;
+        top: -100px;
+        left: 16px;
+        padding: 12px 18px;
+        background: var(--ink);
+        color: var(--paper);
+        border-radius: 8px;
+        font-weight: 600;
+        z-index: 100;
+        transition: top 0.2s ease;
+      }
+
+      .skip-link:focus {
+        top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="blobs" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+    </div>
+    <a href="#main-content" class="skip-link">Skip to content</a>
+
+    <button class="theme-toggle" aria-label="Toggle dark mode" type="button">
+      <span class="icon-sun" aria-hidden="true">&#9788;</span>
+      <span class="icon-moon" aria-hidden="true">&#9790;</span>
+    </button>
+
+    <main id="main-content">
+      <a href="/" class="back-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        Back to home
+      </a>
+
+      <article>
+        <h1>LLM Learnings</h1>
+        <p class="subtitle">A collection of practical insights for working with large language models effectively.</p>
+
+        <h2>Mechanistic Foundations</h2>
+
+        <h3>Autoregressive Self-Reinforcement</h3>
+        <p>LLMs are autoregressive: each token predicted conditioned on all prior tokens, including its own output. More precisely, a stochastic process that predicts next tokens with emulation of human-like reasoning.</p>
+        <p>Emitted tokens become context. Bad starts compound; good starts compound. Early tokens carry disproportionate weight. Once the model emits a pattern (hedging, verbosity, a flawed reasoning step), those tokens become evidence that "this is the kind of response we're writing" and further output conditions accordingly.</p>
+
+        <h3>RLHF Shapes Surface Behavior</h3>
+        <p>Hedging, politeness, "epistemic humility": these exist because humans rated them positively during training. The behavior exists; the agency doesn't. Outputs pattern-match to reinforced patterns without intent.</p>
+
+        <h3>Attention and Positional Effects</h3>
+        <p>Attention weight isn't uniform across context. Three scales, same mechanism:</p>
+        <p><strong>Token order</strong> (within a prompt): Same words in different order produce different attention weights. LLMs encode positional information despite parallel processing.</p>
+        <p><strong>Lost in the middle</strong> (within context window): Attention concentrates at context start and end. Critical information placed mid-context gets deprioritized. Place high-signal content at boundaries.</p>
+        <p><strong>Prompt hierarchy positioning</strong> (structural): Base prompts anchor from context start, user input anchors from the end, both high-attention positions. System/developer prompts sit in the middle where they're more easily overwhelmed. The hierarchy isn't just priority rules; it's architecturally positioned to exploit attention distribution.</p>
+        <p><strong>Caveat:</strong> Vendors claim improvements mitigate known issues. Your 200k-token codebase may disagree. Official docs describe lab conditions. Real workloads break things the benchmarks didn't test. What's claimed is rarely what you get at scale. Adjust expectations accordingly.</p>
+
+        <hr />
+
+        <h2>Prompt Engineering</h2>
+
+        <h3>Prefer / Avoid / Unless</h3>
+        <p>Soft constraints match probabilistic weighting better than hard rules. Explicit exception clauses reduce ambiguity. Structure parses cleanly as a decision tree. Mirrors high-quality instructional text in training data.</p>
+        <p><strong>Avoid NEVER/ALWAYS/DONT.</strong> Hard constraints pigeonhole the model. When edge cases arise that can't reconcile with an absolute rule, the model either thrashes (oscillating, hedged output), overcorrects (avoids anything adjacent), or forces compliance in ways that violate intent. Soft constraints with escape hatches let the model navigate gracefully.</p>
+
+        <h3>Counteract the Brevity Bias</h3>
+        <p>RLHF optimizes for perceived helpfulness, which models often interpret as "be concise." The default pull is toward quick answers and premature convergence. Telling the model to be "comprehensive and thorough" grants permission to explore more paths before committing, allocate more tokens to the problem, and resist the urge to declare victory early.</p>
+        <p>This is the inverse of the premature root cause problem: the model wants to finish. You're telling it the task isn't finished until more ground is covered.</p>
+
+        <h3>One Good Example Beats Ten</h3>
+        <p>Show the model what "right" looks like. One clear example of desired output anchors the pattern better than paragraphs of description. If relevant, pair it with a "wrong" example to define the boundary.</p>
+        <p>Don't overload with examples. Attention diffuses across many; one or two sharp ones land harder. The goal is pattern establishment, not exhaustive coverage.</p>
+
+        <h3>Focus Activates Relevant Patterns</h3>
+        <p>Framing a task with a specific role or lens ("Act as a security auditor", "Do a QA review") focuses attention on relevant patterns. The model isn't pretending: you're selecting which subset of its training to weight.</p>
+        <p>For multi-faceted tasks like code review, run separate passes with distinct focuses: code quality, architecture, QA, security. Each pass lights up different "brain cells." A single prompt asking for everything dilutes focus; sequential targeted passes produce sharper results.</p>
+
+        <h3>Strip the Filler</h3>
+        <p>Conversational padding ("I was wondering if you could...", "It would be great if...", "Please and thank you") is noise. Every token competes for attention. Filler tokens dilute signal and reduce output quality.</p>
+        <p>The model isn't human. It doesn't need pleasantries to cooperate. Direct prompts produce better results than polite ones.</p>
+        <p>Broader principle: always consider your model's context length and training. Effective prompt optimization is part science, part art, but wasted tokens are just waste.</p>
+
+        <h3>Self-Review via Turn Reset</h3>
+        <p>After the model produces output, undo the turn and feed the response back as input for review. The model is often a better critic than generator: reviewing completed work activates different patterns than producing it. Nearly always catches issues missed on the first pass.</p>
+        <p>This exploits the asymmetry between generation mode (converge on an answer) and evaluation mode (find problems). Same model, different task framing, better results.</p>
+
+        <h3>State Machine Logic in Agent Configs</h3>
+        <p>When workflows are stateful, explicit conditional syntax works well:</p>
+
+<pre><code>IF code is changed
+THEN run build
+THEN run tests
+END</code></pre>
+
+        <p>LLMs pattern-match to conditional structures. State machine syntax makes transitions unambiguous.</p>
+        <p><strong>Stateless declarations</strong> (ALWAYS x after y) work when the mapping is pure: same input, same output, no context dependency. The test: if the same trigger could legitimately need different responses depending on context not captured in the statement, it's not stateless and ALWAYS will fail.</p>
+
+        <h3>Prompt Hierarchy</h3>
+        <p>Base prompts from the provider (Anthropic, OpenAI) are immutable. You can influence behavior through system/developer prompts but not override base constraints.</p>
+        <p>The stack, from lowest priority to highest attention weight:</p>
+        <ol>
+          <li><strong>Base prompt</strong>: provider-level, can't change</li>
+          <li><strong>Global config</strong>: <code>~/.claude/CLAUDE.md</code> or <code>~/.codex/AGENTS.md</code>, universal rules across all projects</li>
+          <li><strong>Project config</strong>: repo root, project-specific rules</li>
+          <li><strong>Subfolder config</strong>: subdirectory, most specific, highest attention</li>
+        </ol>
+        <p>Lower levels get more attention weight but cannot override higher levels. Global config is for rules that apply everywhere; project and subfolder configs specialize. Don't repeat yourself: if it applies universally, it goes in global.</p>
+        <p>This structure also exploits attention positioning. See Attention and Positional Effects.</p>
+
+        <h3>Shared Config Across LLMs</h3>
+        <p>Don't maintain duplicate agent configs per LLM. Create one canonical file (e.g., AGENTS.md) and import it:</p>
+
+<pre><code># CLAUDE.md
+@AGENTS.md
+
+# Claude-specific overrides here if needed</code></pre>
+
+        <p>The @ notation triggers auto-read at session start. Gemini, Claude, Codex all support this pattern. One source of truth, no config drift. LLM-specific files can add overrides after the import if needed.</p>
+
+        <h3>Lint Your Prompts Through an LLM</h3>
+        <p>Before deploying agent configs, run them through an LLM and ask it to identify:</p>
+        <ul>
+          <li>Loud contradictions (obvious conflicts)</li>
+          <li>Subtle contradictions (rules that conflict in edge cases)</li>
+          <li>Ambiguity (vague terms: "best practices," "clean code," "when appropriate")</li>
+        </ul>
+        <p>Ambiguity is runtime cost: the model churns on interpretation instead of execution. Define a concrete design philosophy. "Best practices" means nothing. "Functions under 40 lines, single responsibility, explicit error handling" means something. Remove every undefined term.</p>
+
+        <hr />
+
+        <h2>Workflow Architecture</h2>
+
+        <h3>Multi-Model Workflows and the Human Director Role</h3>
+        <p>RLHF optimizes for task completion, not task questioning. All models are trained toward "do the thing" rather than "should we do the thing." Two failure modes result:</p>
+        <ul>
+          <li><strong>Overeager compliance:</strong> executes flawed requests without pushback</li>
+          <li><strong>Overeager helpfulness:</strong> "improves" your code unprompted based on its own pattern-matching</li>
+        </ul>
+        <p>No model defaults to adversarial review. The human director role fills this gap: gather information first (architecture, tradeoffs, prior art), make foundational calls, <em>then</em> direct implementation. Vibe coding produces running artifacts; it doesn't produce sound architecture. The prerequisite work (asking foundational questions before implementation) remains a human responsibility.</p>
+        <p><strong>Model allocation by trait:</strong></p>
+        <ul>
+          <li><strong>Weak priors</strong> (Gemini Flash): architecture work, follows your lead, doesn't fight design decisions</li>
+          <li><strong>Strong priors</strong> (Claude): review, skepticism, catching errors, but must be explicitly framed as review</li>
+          <li><strong>Fast compliance</strong> (GPT, Cursor): implementation velocity, debugging loops</li>
+        </ul>
+
+        <h3>Model Selection</h3>
+        <p>Use the right model for the task. Some models are good at reasoning, some at speed, some at following instructions. Some aren't good at anything. Don't force a round peg into a square hole: if a model consistently fails at a task type, switch models instead of fighting it.</p>
+        <p>Never use Grok. Don't.</p>
+
+        <h3>Context Growth and Compaction Decay</h3>
+        <p>Long sessions with repeated compaction degrade output quality even when the model is strong. Compaction is theoretically lossless summarization but practically isn't:</p>
+        <ul>
+          <li>Summarization reifies early errors as facts</li>
+          <li>Dense summaries hit attention patterns differently than natural redundant text</li>
+          <li>Model-generated summaries reinforce the model's own output patterns</li>
+          <li>Compounding loss across multiple cycles (telephone game effect)</li>
+        </ul>
+        <p>Rule of thumb: complete a task, start a fresh session. Don't run a single context for 8+ hours through repeated compaction.</p>
+
+        <h3>Externalize Plans to Files</h3>
+        <p>For non-trivial tasks, have the LLM write its plan to a markdown file. This externalizes working memory and survives compaction.</p>
+        <p><strong>Keep files clean.</strong> LLMs mark items DONE but don't remove stale content. Accumulated completed items become noise. Separate concerns:</p>
+        <ul>
+          <li><strong>plan.md:</strong> current tasks only, actively pruned</li>
+          <li><strong>archive.md:</strong> completed work (if history needed)</li>
+          <li><strong>context.md:</strong> pointers to relevant files and resources</li>
+        </ul>
+        <p><strong>Use pointers, not duplication.</strong> LLMs read whole files: inlined content fills context whether needed or not. Pointers (<code>See code/graphics/vulkan/README.md for Vulkan architecture</code>) let the model fetch only what's relevant to the current task. Single source of truth: one location to maintain for both you and the LLM. LLMs will insert redundant information if allowed; pointers enforce reading the source rather than copying it.</p>
+
+        <h3>Log Files: Reduce Noise with Prefixes</h3>
+        <p>LLMs avoid large files (context cost) and attention diffuses across noise. Log files are useful for debugging but only if the signal is extractable.</p>
+        <p><strong>Prefix relevant lines</strong> with a consistent tag:</p>
+
+<pre><code>[agent] VulkanDescriptorLayouts: allocated model pool</code></pre>
+
+        <p>This gives the model a pattern to anchor on. "Look for [agent] lines" becomes a targeted search instead of full-file evaluation. Same principle as pointers: direct the model to what matters rather than forcing it to assess everything.</p>
+
+        <hr />
+
+        <h2>Failure Mode Awareness</h2>
+
+        <h3>Debugging: Force Epistemic Hygiene</h3>
+        <p>LLMs declare root causes prematurely. RLHF rewards confident task completion, but "found the bug" in context becomes load-bearing: subsequent reasoning builds on the assumption even when wrong.</p>
+        <p><strong>Ban declarative language:</strong></p>
+        <ul>
+          <li>"Root cause," "found the bug," "this is causing X"</li>
+        </ul>
+        <p><strong>Require hedged language:</strong></p>
+        <ul>
+          <li>"Possible," "potential," "may," "symptom," "observed behavior"</li>
+          <li>Frame findings as hypotheses until confirmed</li>
+        </ul>
+        <p><strong>Confirmation requires evidence:</strong></p>
+        <ul>
+          <li>Unit test reproduces it</li>
+          <li>Logs show the trigger</li>
+          <li>Manual validation demonstrates behavior</li>
+        </ul>
+        <p>Even confirmed issues may be symptoms of deeper bugs. Keep analysis provisional until the full chain is traced.</p>
+
+        <h3>LLMs Aren't Sycophantic: They're RLHF-Shaped</h3>
+        <p>Sycophancy implies intent. LLMs are probability distributions shaped by human ratings. The outputs lean toward task completion and agreeableness because that's what got rewarded.</p>
+        <p><strong>Semantic vs syntactic confusion.</strong> "Don't use std::optional" may be parsed as "don't use it that way" rather than "don't use this type." The model changes syntax while preserving semantics.</p>
+        <p><strong>Tautological unit tests.</strong> LLMs produce tests that technically pass but prove nothing:</p>
+        <ul>
+          <li>Create error object, then test that it's an error</li>
+          <li>Mock dependencies, then test the mock, not the integration</li>
+          <li>Disable core features, then test a state that never occurs in production</li>
+        </ul>
+        <p>The model is technically correct. The test passes. No production code was exercised.</p>
+        <p><strong>Fix:</strong> Use code coverage tools. If coverage doesn't increase, the test is wrong regardless of pass/fail.</p>
+
+        <div class="section-divider">···</div>
+
+        <p><strong>The goal is to work with the model's mechanics, not against them.</strong></p>
+      </article>
+    </main>
+
+    <script>
+      (function() {
+        // Theme toggle logic
+        const toggle = document.querySelector('.theme-toggle');
+        const html = document.documentElement;
+
+        const saved = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (saved === 'dark' || (!saved && prefersDark)) {
+          html.setAttribute('data-theme', 'dark');
+        }
+
+        toggle.addEventListener('click', function() {
+          const isDark = html.getAttribute('data-theme') === 'dark';
+          const newTheme = isDark ? 'light' : 'dark';
+          html.setAttribute('data-theme', newTheme);
+          localStorage.setItem('theme', newTheme);
+        });
+      })();
+    </script>
+  </body>
+</html>
