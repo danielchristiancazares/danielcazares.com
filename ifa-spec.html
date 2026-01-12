@@ -1,0 +1,1093 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Invariant-First Architecture Specification - Daniel Cazares</title>
+    <meta name="description" content="The full specification for Invariant-First Architecture (IFA). A set of design constraints ensuring core logic is only callable with values that satisfy explicitly stated invariants." />
+    <meta name="author" content="Daniel Cazares" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Invariant-First Architecture Specification - Daniel Cazares" />
+    <meta property="og:description" content="The full specification for Invariant-First Architecture (IFA). Make invalid states unrepresentable by construction." />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://danielcazares.com/ifa-spec.html" />
+
+    <!-- Favicon (data URI for a simple "D") -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>D</text></svg>" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --paper: #f6f1e6;
+        --ink: #1d1912;
+        --muted: #736a5c;
+        --accent: #d45a3a;
+        --accent-2: #1f6f80;
+        --line: rgba(29, 25, 18, 0.14);
+        --panel: rgba(255, 255, 255, 0.65);
+        --shadow: 0 22px 50px rgba(31, 22, 12, 0.18);
+        --radius: 22px;
+        --bg-grad-1: #fdebd0;
+        --bg-grad-2: #f7c9ad;
+        --bg-grad-3: #f8f3e8;
+        --bg-grad-4: #efe6d6;
+        --pattern-color: rgba(29, 25, 18, 0.035);
+        --code-bg: rgba(29, 25, 18, 0.06);
+      }
+
+      [data-theme="dark"] {
+        --paper: #1a1816;
+        --ink: #e8e4dc;
+        --muted: #9a948a;
+        --accent: #e8755a;
+        --accent-2: #4db3c7;
+        --line: rgba(255, 255, 255, 0.12);
+        --panel: rgba(40, 36, 32, 0.75);
+        --shadow: 0 22px 50px rgba(0, 0, 0, 0.4);
+        --bg-grad-1: #2a2420;
+        --bg-grad-2: #302824;
+        --bg-grad-3: #1e1a18;
+        --bg-grad-4: #161412;
+        --pattern-color: rgba(255, 255, 255, 0.02);
+        --code-bg: rgba(255, 255, 255, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        min-height: 100vh;
+        font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+        color: var(--ink);
+        background: transparent;
+        position: relative;
+        overflow-x: hidden;
+        transition: color 0.3s ease;
+      }
+
+      .blobs {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        overflow: hidden;
+        pointer-events: none;
+        background: linear-gradient(180deg, var(--bg-grad-3) 0%, var(--bg-grad-4) 100%);
+        transition: background 0.3s ease;
+      }
+
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.6;
+      }
+
+      .blob-1 {
+        top: -10%;
+        left: -10%;
+        width: 50vw;
+        height: 50vw;
+        background: var(--bg-grad-1);
+        animation: float1 25s infinite alternate ease-in-out;
+      }
+
+      .blob-2 {
+        bottom: 20%;
+        right: -10%;
+        width: 40vw;
+        height: 40vw;
+        background: var(--bg-grad-2);
+        animation: float2 20s infinite alternate ease-in-out;
+      }
+
+      @keyframes float1 {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        100% { transform: translate(100px, 50px) rotate(20deg); }
+      }
+
+      @keyframes float2 {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        100% { transform: translate(-80px, -40px) rotate(-15deg); }
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: repeating-linear-gradient(
+          135deg,
+          var(--pattern-color) 0,
+          var(--pattern-color) 1px,
+          transparent 1px,
+          transparent 12px
+        );
+        pointer-events: none;
+        opacity: 0.6;
+        z-index: 0;
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      a:hover {
+        color: var(--accent-2);
+      }
+
+      main {
+        position: relative;
+        z-index: 1;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 72px 28px 80px;
+      }
+
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 40px;
+        font-weight: 500;
+        color: var(--muted);
+        transition: color 0.2s ease, transform 0.2s ease;
+      }
+
+      .back-link:hover {
+        color: var(--ink);
+        transform: translateX(-4px);
+      }
+
+      .back-link svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      article {
+        background: var(--panel);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: var(--radius);
+        padding: 48px 42px;
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06),
+          var(--shadow);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        animation: rise 0.8s ease both;
+      }
+
+      [data-theme="dark"] article {
+        border-color: rgba(255, 255, 255, 0.08);
+      }
+
+      h1 {
+        font-family: "Fraunces", "Georgia", serif;
+        font-weight: 700;
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        letter-spacing: 0.02em;
+        margin-bottom: 16px;
+        line-height: 1.2;
+      }
+
+      .subtitle {
+        font-size: 1.1rem;
+        color: var(--muted);
+        margin-bottom: 40px;
+        font-style: italic;
+      }
+
+      h2 {
+        font-family: "Fraunces", "Georgia", serif;
+        font-size: 1.6rem;
+        letter-spacing: 0.02em;
+        margin-top: 48px;
+        margin-bottom: 20px;
+        color: var(--ink);
+      }
+
+      h2:first-of-type {
+        margin-top: 0;
+      }
+
+      h3 {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-top: 32px;
+        margin-bottom: 12px;
+        color: var(--ink);
+      }
+
+      h4 {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-top: 24px;
+        margin-bottom: 10px;
+        color: var(--ink);
+      }
+
+      p {
+        line-height: 1.75;
+        margin-bottom: 16px;
+        color: var(--ink);
+      }
+
+      strong {
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      em {
+        font-style: italic;
+      }
+
+      hr {
+        border: none;
+        height: 1px;
+        background: var(--line);
+        margin: 40px 0;
+      }
+
+      ul, ol {
+        margin-bottom: 16px;
+        padding-left: 24px;
+      }
+
+      li {
+        line-height: 1.75;
+        margin-bottom: 8px;
+      }
+
+      li ul, li ol {
+        margin-top: 8px;
+        margin-bottom: 8px;
+      }
+
+      blockquote {
+        border-left: 3px solid var(--accent);
+        padding-left: 20px;
+        margin: 24px 0;
+        font-style: italic;
+        color: var(--muted);
+      }
+
+      blockquote p {
+        color: var(--muted);
+      }
+
+      code {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.9em;
+        background: var(--code-bg);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+
+      pre {
+        background: var(--code-bg);
+        border-radius: 12px;
+        padding: 20px 24px;
+        overflow-x: auto;
+        margin: 20px 0;
+        border: 1px solid var(--line);
+      }
+
+      pre code {
+        background: none;
+        padding: 0;
+        font-size: 0.85rem;
+        line-height: 1.6;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 24px 0;
+        font-size: 0.95rem;
+      }
+
+      th, td {
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+      }
+
+      th {
+        font-weight: 600;
+        color: var(--ink);
+        background: var(--code-bg);
+      }
+
+      td {
+        color: var(--muted);
+      }
+
+      td:first-child {
+        color: var(--ink);
+        font-weight: 500;
+      }
+
+      .section-divider {
+        text-align: center;
+        margin: 48px 0;
+        color: var(--muted);
+        font-size: 1.5rem;
+        letter-spacing: 0.5em;
+      }
+
+      .highlight-box {
+        background: rgba(212, 90, 58, 0.08);
+        border: 1px solid rgba(212, 90, 58, 0.2);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin: 24px 0;
+      }
+
+      [data-theme="dark"] .highlight-box {
+        background: rgba(232, 117, 90, 0.1);
+        border-color: rgba(232, 117, 90, 0.2);
+      }
+
+      .highlight-box p:last-child {
+        margin-bottom: 0;
+      }
+
+      .toc {
+        background: var(--code-bg);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin: 24px 0;
+        border: 1px solid var(--line);
+      }
+
+      .toc-title {
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: var(--ink);
+      }
+
+      .toc ul {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 0;
+      }
+
+      .toc li {
+        margin-bottom: 6px;
+      }
+
+      .toc a {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .toc a:hover {
+        color: var(--accent);
+      }
+
+      /* Theme toggle */
+      .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 44px;
+        height: 44px;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: var(--panel);
+        color: var(--ink);
+        backdrop-filter: blur(6px);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        z-index: 50;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .theme-toggle:hover {
+        transform: scale(1.08);
+        box-shadow: var(--shadow);
+      }
+
+      .theme-toggle .icon-sun,
+      .theme-toggle .icon-moon {
+        position: absolute;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+
+      .theme-toggle .icon-moon {
+        opacity: 0;
+        transform: rotate(-90deg);
+      }
+
+      [data-theme="dark"] .theme-toggle .icon-sun {
+        opacity: 0;
+        transform: rotate(90deg);
+      }
+
+      [data-theme="dark"] .theme-toggle .icon-moon {
+        opacity: 1;
+        transform: rotate(0);
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 600px) {
+        main {
+          padding: 56px 16px 70px;
+        }
+
+        article {
+          padding: 32px 24px;
+        }
+
+        pre {
+          padding: 16px;
+          margin-left: -8px;
+          margin-right: -8px;
+          border-radius: 8px;
+        }
+
+        table {
+          font-size: 0.85rem;
+        }
+
+        th, td {
+          padding: 10px 12px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+
+      /* Accessibility: Focus states */
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+
+      .skip-link {
+        position: absolute;
+        top: -100px;
+        left: 16px;
+        padding: 12px 18px;
+        background: var(--ink);
+        color: var(--paper);
+        border-radius: 8px;
+        font-weight: 600;
+        z-index: 100;
+        transition: top 0.2s ease;
+      }
+
+      .skip-link:focus {
+        top: 16px;
+      }
+
+      .related-link {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 8px 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: var(--muted);
+        transition: all 0.2s ease;
+      }
+
+      .related-link:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="blobs" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+    </div>
+    <a href="#main-content" class="skip-link">Skip to content</a>
+
+    <button class="theme-toggle" aria-label="Toggle dark mode" type="button">
+      <span class="icon-sun" aria-hidden="true">&#9788;</span>
+      <span class="icon-moon" aria-hidden="true">&#9790;</span>
+    </button>
+
+    <main id="main-content">
+      <a href="/" class="back-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        Back to home
+      </a>
+
+      <article>
+        <h1>Invariant-First Architecture (IFA)</h1>
+        <p class="subtitle">The full specification. For the condensed version, see <a href="/architecture.html">the overview</a>.</p>
+
+        <nav class="toc">
+          <div class="toc-title">Table of Contents</div>
+          <ul>
+            <li><a href="#pattern-summary">Pattern Summary</a></li>
+            <li><a href="#definitions">1. Definitions</a></li>
+            <li><a href="#primary-rule">2. Primary Rule</a></li>
+            <li><a href="#typestate-transitions">3. Typestate Transitions</a></li>
+            <li><a href="#parametricity">4. Parametricity</a></li>
+            <li><a href="#constrained-generics">5. Constrained Generics and Call-Site Rejection</a></li>
+            <li><a href="#ownership">6. Ownership as Coordination Elimination</a></li>
+            <li><a href="#mechanism-vs-policy">7. Mechanism vs Policy</a></li>
+            <li><a href="#state-as-location">8. State as Location</a></li>
+            <li><a href="#capability-tokens">9. Capability Tokens</a></li>
+            <li><a href="#boundary-core">10. Boundary and Core Separation</a></li>
+            <li><a href="#assertions">11. Assertions</a></li>
+            <li><a href="#non-conforming">12. Non-Conforming Patterns</a></li>
+            <li><a href="#litmus-tests">13. Litmus Tests</a></li>
+            <li><a href="#implementation">14. Implementation Notes</a></li>
+            <li><a href="#limitations">15. Known Limitations</a></li>
+            <li><a href="#checklist">16. Operational Definitions Checklist</a></li>
+            <li><a href="#objections">17. Non-Acceptable Objections</a></li>
+            <li><a href="#closing">18. Closing Statement</a></li>
+          </ul>
+        </nav>
+
+        <h2 id="pattern-summary">Pattern Summary</h2>
+
+        <p><strong>Intent:</strong> Prevent invalid states from being usable by core logic by encoding invariants and temporal constraints in representations and interfaces, such that misuse is structurally rejected.</p>
+
+        <p><strong>Context:</strong> Systems with a boundary that ingests unreliable or adversarial inputs and a core that must remain simple, composable, and correct by construction.</p>
+
+        <p><strong>Problem:</strong> If core functions accept "maybe-valid" representations, the core must contain pervasive checks, assertions, or conventions; this spreads boundary complexity through the system and makes correctness depend on discipline.</p>
+
+        <p><strong>Forces:</strong></p>
+        <ol>
+          <li>We prioritize simplicity of reasoning over ease of writing ("compile-time rejection" over "debug-time discovery").</li>
+          <li>Boundaries are messy and must be adaptable; cores must be strict and assumption-driven.</li>
+          <li>The language may not perfectly enforce the ideal; the architecture must still make invalid states hard to reach and impossible to use in the core.</li>
+        </ol>
+
+        <p><strong>Solution:</strong> Encode invariants as types / typestates / capability tokens / container topology; enforce call-site rejection; keep retries and adaptation at the boundary; treat assertions as evidence of representable invalid states.</p>
+
+        <p><strong>Consequences:</strong></p>
+        <ul>
+          <li>More upfront type modeling and boundary conversion code.</li>
+          <li>Fewer runtime guard paths in the core; fewer "undefined intermediate states."</li>
+          <li>Interfaces become the primary correctness artifact.</li>
+        </ul>
+
+        <p><strong>Scope:</strong> This pattern assumes synchronous, single-threaded core logic. Concurrency is boundary logic (see <a href="#limitations">Known Limitations</a>).</p>
+
+        <hr />
+
+        <h2 id="status-scope">0. Status and Scope</h2>
+
+        <p>This document defines <strong>Invariant-First Architecture (IFA)</strong> as an architectural pattern. IFA is a set of design constraints whose purpose is to ensure that <strong>core logic is only callable with values that satisfy explicitly stated invariants</strong>, by construction, and without reliance on programmer discipline, runtime guard code inside the core, or informal documentation.</p>
+
+        <p>This document is normative where it uses "MUST" and "MUST NOT." Examples are illustrative and are not normative unless the requirement is stated independently of the example.</p>
+
+        <hr />
+
+        <h2 id="definitions">1. Definitions</h2>
+
+        <h3>1.1 Core Terms</h3>
+
+        <h4>Invariant</h4>
+        <p>A predicate over a value, a set of values, or a system state that is required to hold whenever that value or state is observable by core code.</p>
+
+        <h4>Invalid state</h4>
+        <p>Any value or system state for which at least one required invariant does not hold.</p>
+
+        <h4>Representable</h4>
+        <p>An invalid state is representable if there exists any program expression&mdash;available to code outside the Authority Boundary&mdash;that can construct or obtain a value or state that violates an invariant and still type-checks against an interface intended for core use.</p>
+
+        <h4>Unrepresentable (for the core)</h4>
+        <p>An invalid state is unrepresentable for the core if no code outside the Authority Boundary can produce a value that violates the invariant and still satisfy the types (or equivalent interface constraints) required to invoke core operations.</p>
+
+        <h3>1.2 System Topology</h3>
+
+        <h4>Authority Boundary</h4>
+        <p>The smallest encapsulation boundary that can actually enforce construction control for a representation. A value is considered "controlled" by an Authority Boundary if and only if code outside that boundary cannot construct it without using the boundary's public API.</p>
+
+        <p><em>Operationalization:</em> The Authority Boundary for a type is the set of code that can call its constructors or factory functions that are otherwise inaccessible (e.g., via <code>private</code> constructors and <code>friend</code> access in C++, <code>pub(crate)</code> in Rust). "Same repository," "same namespace," and "same header" are not Authority Boundaries unless they coincide with actual access control.</p>
+
+        <h4>Boundary</h4>
+        <p>The set of components that interact with non-IFA-controlled inputs or effects, including but not limited to: user input, network I/O, filesystem, external services, clocks/time, random sources, concurrency primitives, and foreign-function interfaces.</p>
+
+        <h4>Core</h4>
+        <p>The set of components whose correctness depends on the assumption that all invariants are satisfied. Core code MUST treat invariants as already established and MUST NOT accept "maybe-valid" representations of required invariants.</p>
+
+        <h3>1.3 Proof and Transition</h3>
+
+        <h4>Proof object</h4>
+        <p>A value whose existence is used as evidence that a specific invariant holds or that a specific event/phase has occurred. Proof objects are only meaningful if the system prevents their construction without establishing the corresponding invariant.</p>
+
+        <h4>Transition</h4>
+        <p>A function or operation that consumes (or otherwise makes unusable) a proof object for state A and produces a proof object for state B, thereby encoding temporal or phase ordering as a type-level (or interface-level) fact.</p>
+
+        <h3>1.4 Mechanism vs Policy</h3>
+
+        <p><strong>Mechanism</strong>: A component that reports facts and constraints about the world or a subsystem.</p>
+
+        <p><strong>Policy</strong>: A component that makes decisions about what to do given those facts.</p>
+
+        <hr />
+
+        <h2 id="primary-rule">2. Primary Rule</h2>
+
+        <h3>2.1 Invalid states MUST NOT be representable in the core</h3>
+
+        <p>An implementation conforms to IFA only if, for every invariant required by core operations, core-callable interfaces require a representation that cannot encode a violation of that invariant.</p>
+
+        <p>Consequences:</p>
+        <ul>
+          <li>Core functions MUST NOT accept "maybe-valid" parameters for invariants that are required for correct operation.</li>
+          <li>Core functions MUST NOT rely on:
+            <ul>
+              <li>caller discipline,</li>
+              <li>runtime checks inside the core,</li>
+              <li>comments or documentation,</li>
+              <li>"this will never happen" assumptions that are not enforced by representation.</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h3>2.2 The architecture MUST encode invariants such that compilation becomes meaningful evidence</h3>
+
+        <p>IFA requires that invariants be declared and encoded in interfaces. When this is done correctly, successful compilation demonstrates that encoded invariants are satisfied at every call site.</p>
+
+        <p>IFA does not claim that compilation implies absence of runtime defects, undefined behavior, or external failures. It claims only that invariants which are declared and encoded in interfaces are not optional at runtime.</p>
+
+        <p>If invalid behavior is still possible after successful type-checking, then either:</p>
+        <ul>
+          <li>the invariant was not encoded in the interface, or</li>
+          <li>the Authority Boundary permits construction of a proof object without establishing the invariant.</li>
+        </ul>
+
+        <p>Either case is a design defect under IFA.</p>
+
+        <hr />
+
+        <h2 id="typestate-transitions">3. Typestate Transitions</h2>
+
+        <h3>3.1 Problem: Temporal coupling expressed as a runtime convention</h3>
+
+        <p>If correct behavior depends on an operation happening "earlier" (e.g., "deck must be shuffled before starting a game"), then any representation that can mean both "shuffled" and "not shuffled" without forcing the distinction at the interface level is non-conforming.</p>
+
+        <h3>3.2 Requirement: Distinct states MUST be distinct types</h3>
+
+        <p>For any lifecycle step where validity depends on prior events, the system MUST provide distinct representations for each meaningful validity state. A consumer requiring state B MUST accept only the representation for state B.</p>
+
+        <h3>3.3 Requirement: Transitions MUST be non-forking</h3>
+
+        <p>A transition from state A to state B MUST prevent continued use of the "A" representation as if it still grants rights to act as state A.</p>
+
+        <p>Operationalization options include:</p>
+        <ul>
+          <li>linear/affine types,</li>
+          <li>move-only types paired with an API that makes moved-from values unusable,</li>
+          <li>ownership transfer via unique handles,</li>
+          <li>explicit consumption APIs that invalidate the prior handle.</li>
+        </ul>
+
+        <p><strong>C++ note:</strong> In standard C++, "move" alone does not guarantee destructive consumption (moved-from objects remain valid but unspecified). "Non-forking" MUST be enforced by ensuring that the moved-from object cannot perform meaningful actions (e.g., resource in <code>unique_ptr</code> where moved-from becomes null, or methods are rvalue-qualified consumption-only).</p>
+
+        <hr />
+
+        <h2 id="parametricity">4. Parametricity</h2>
+
+        <h3>4.1 Problem: Inspection creates hidden coupling</h3>
+
+        <p>If a function can inspect the data it is given, it can embed decisions based on that inspection. Such decisions create unintended policy inside low-level mechanisms.</p>
+
+        <h3>4.2 Requirement: Generic functions MUST NOT inspect without explicit permission</h3>
+
+        <p>A function that is declared generic over <code>T</code> and is not explicitly constrained to permit inspection of <code>T</code> MUST NOT incorporate any behavior that depends on inspecting the content of <code>T</code> values.</p>
+
+        <p>"Inspection" includes:</p>
+        <ul>
+          <li>reading fields,</li>
+          <li>invoking domain-specific methods,</li>
+          <li>logging/serializing values for debugging,</li>
+          <li>branching based on value properties.</li>
+        </ul>
+
+        <p>Any capability to inspect <code>T</code> MUST be made explicit at the interface boundary as a declared constraint (concept/trait/interface) that grants specific operations. Inspection MUST NOT be introduced implicitly inside the implementation.</p>
+
+        <h3>4.3 Enforcement rule</h3>
+
+        <p>A function claiming parametric behavior MUST NOT use:</p>
+        <ul>
+          <li>template specialization that changes semantics based on <code>T</code>,</li>
+          <li><code>if constexpr</code> on type traits,</li>
+          <li>RTTI (<code>typeid</code>, <code>dynamic_cast</code>),</li>
+          <li>reflection-like mechanisms,</li>
+          <li>casts to obtain type- or representation-specific knowledge.</li>
+        </ul>
+
+        <p>If such mechanisms are used, the function is not parametric under IFA and MUST be specified as a different interface with a different contract.</p>
+
+        <hr />
+
+        <h2 id="constrained-generics">5. Constrained Generics and Call-Site Rejection</h2>
+
+        <h3>5.1 Requirement: Invalid instantiations MUST be rejected at the Authority Boundary</h3>
+
+        <p>If a generic function requires a capability (e.g., "serializable"), the interface MUST express that requirement such that:</p>
+        <ul>
+          <li>the function is not callable (or not type-checkable) for non-conforming types, and</li>
+          <li>failure does not occur "deep inside" instantiation or runtime logic.</li>
+        </ul>
+
+        <p>Invalid inputs MUST NOT propagate into internal logic as partially-formed obligations.</p>
+
+        <hr />
+
+        <h2 id="ownership">6. Ownership as Coordination Elimination</h2>
+
+        <h3>6.1 Requirement: A mutable resource MUST have exactly one authoritative owner</h3>
+
+        <p>If two components must "agree" on the state of a resource, the system has created distributed ownership. Under IFA, this is a design defect unless the architecture explicitly models multi-owner consensus as a first-class protocol.</p>
+
+        <h3>6.2 Requirement: Core functions MUST NOT accept partially-owned constructions</h3>
+
+        <p>A core function MUST NOT accept an interface where:</p>
+        <ul>
+          <li>one party owns allocation/storage and another party owns completion/initialization semantics, and</li>
+          <li>success is signaled via boolean return codes or sentinel values while leaving the destination in an indeterminate state.</li>
+        </ul>
+
+        <p>A constructor/factory boundary MUST return either:</p>
+        <ul>
+          <li>a fully constructed, invariant-satisfying object, or</li>
+          <li>an explicit error value that prevents the object from existing in the core in a partial state.</li>
+        </ul>
+
+        <h3>6.3 Compensatory retries inside the core are prohibited</h3>
+
+        <p>A loop inside the core is a prohibited <strong>compensatory retry</strong> if it re-attempts an operation whose success you could have ensured but didn't.</p>
+
+        <p>If you can manage it, you own it. Anything you can prevent but don't is a design failure, not an external event.</p>
+
+        <p>This includes:</p>
+        <ul>
+          <li>Memory allocation you could have pre-allocated or pooled,</li>
+          <li>Lock contention you could have eliminated through ownership design,</li>
+          <li>Resource exhaustion you could have bounded,</li>
+          <li>Any failure mode you had the power to prevent.</li>
+        </ul>
+
+        <p>Such loops MUST be located at the boundary and MUST be governed by an explicit policy component. The boundary is where you handle consequences of choices you made about what to control.</p>
+
+        <p>Deterministic algorithms that iterate toward a result (e.g., numeric methods, search, parsing) are not retries under this definition because their termination is determined by inputs, not by hoping conditions change.</p>
+
+        <hr />
+
+        <h2 id="mechanism-vs-policy">7. Mechanism vs Policy</h2>
+
+        <h3>7.1 Requirement: Providers MUST report facts; they MUST NOT silently choose fallbacks</h3>
+
+        <p>A data provider (mechanism) MUST NOT:</p>
+        <ul>
+          <li>substitute a default value when the requested value is missing, and</li>
+          <li>return that default through the same type as the real value.</li>
+        </ul>
+
+        <p>If a provider can return "real data" or "fallback," then the interface MUST distinguish these outcomes structurally (e.g., sum type / tagged union / result type) so the caller must explicitly choose a policy.</p>
+
+        <h3>7.2 Requirement: Absence MUST be represented as absence</h3>
+
+        <p>Returning a value that is "not the requested value" but is typed identically to the requested value is non-conforming if the caller cannot distinguish the cases through the type/interface alone.</p>
+
+        <hr />
+
+        <h2 id="state-as-location">8. State as Location</h2>
+
+        <h3>8.1 Requirement: Lifecycle state MUST be represented structurally</h3>
+
+        <p>If a lifecycle state changes (a) which operations are valid, or (b) which data members are valid/meaningful, then that lifecycle state MUST be represented as a distinct type (typestate/variant).</p>
+
+        <p>The type is the state. A <code>HungryCat</code> eats. A <code>Cat</code> doesn't. The container herds; it doesn't enforce. The type is the enforcement.</p>
+
+        <p>A boolean, enum, or flag MUST NOT be used to represent lifecycle state.</p>
+
+        <p>A boolean, enum, or flag MAY exist only as behavioral configuration whose values do not change which fields are valid (the "memory layout test": if the flag changed, would the same fields still be meaningful?).</p>
+
+        <h3>8.2 Requirement: State transitions MUST be performed by moving between types</h3>
+
+        <p>To change lifecycle state, the entity MUST be transformed into a different type representing the new state.</p>
+        <ul>
+          <li>The type is the state.</li>
+          <li>There is no flag that can diverge from reality.</li>
+          <li>You don't check what you have. You know what you have by the type you're holding.</li>
+        </ul>
+
+        <hr />
+
+        <h2 id="capability-tokens">9. Capability Tokens</h2>
+
+        <h3>9.1 Requirement: Phase-conditional operations MUST require a phase proof</h3>
+
+        <p>If an operation is valid only during a specific phase (e.g., a render pass), the operation MUST require a capability token that:</p>
+        <ul>
+          <li>cannot be obtained outside that phase, and</li>
+          <li>cannot outlive that phase.</li>
+        </ul>
+
+        <p>Assertions like <code>assert(is_rendering)</code> are non-conforming as a substitute for a missing token, because they detect an invalid call after the architecture already permitted it.</p>
+
+        <h3>9.2 Token lifetime MUST match phase lifetime</h3>
+
+        <p>A token that proves a phase MUST have a lifetime that is at most the phase lifetime. If a token can be stored and reused later to call phase-restricted operations, it is not a proof; it is a bypass.</p>
+
+        <hr />
+
+        <h2 id="boundary-core">10. Boundary and Core Separation</h2>
+
+        <h3>10.1 Requirement: Boundary code MUST convert; core code MUST assume</h3>
+
+        <p>IFA replaces "validate everywhere" with a strict conversion discipline:</p>
+        <ul>
+          <li>The boundary MUST accept messy input and convert it into strict representations.</li>
+          <li>The core MUST accept only strict representations.</li>
+          <li>The boundary MUST express conversion failure explicitly (error return, result type, etc.).</li>
+        </ul>
+
+        <h3>10.2 Optionality is domain failure</h3>
+
+        <p>Core interfaces MUST NOT accept:</p>
+        <ul>
+          <li>nullable pointers,</li>
+          <li><code>optional&lt;T&gt;</code>,</li>
+          <li>sentinel values,</li>
+          <li>out-parameters that might not be written.</li>
+        </ul>
+
+        <p>If something can be absent, the domain is wrong. Restructure until absence is not a concept that requires representation.</p>
+
+        <p>The type is the state. There is no <code>None</code> variant, no null case. You have the thing or the type doesn't exist.</p>
+
+        <hr />
+
+        <h2 id="assertions">11. Assertions</h2>
+
+        <h3>11.1 Requirement: Assertions MUST NOT enforce representationally expressible invariants</h3>
+
+        <p>If an assertion exists in core code to prevent a state that is representable by the types/interfaces, the design is non-conforming. The invariant MUST be encoded such that the asserted condition is not representable as an input to the core operation.</p>
+
+        <h3>11.2 Language limitations</h3>
+
+        <p>If an invariant cannot be fully encoded:</p>
+        <ol>
+          <li>Encode as much as the language permits.</li>
+          <li>Make violation require explicit circumvention (unsafe blocks, casts, reflection, ignoring warnings).</li>
+        </ol>
+
+        <p>The test: if someone violates the invariant, did they have to try? If the violation was the path of least resistance, the design is non-conforming.</p>
+
+        <p>If the invariant cannot be encoded at all, that component is not IFA-conformant. There is no exception register. There are no documented gaps. The invariant is encoded or it isn't. Partial credit doesn't exist.</p>
+
+        <hr />
+
+        <h2 id="non-conforming">12. Non-Conforming Patterns</h2>
+
+        <p>The following are structural anti-patterns under IFA. Each indicates that an invariant exists but is not encoded:</p>
+
+        <ol>
+          <li><strong>State-dependent validity via flags</strong><br />A flag determines which fields are valid, but all fields exist simultaneously. Use distinct types.</li>
+          <li><strong>Deep "maybe" checks</strong><br />Core logic checks <code>if (ptr)</code> / <code>if (optional)</code> / <code>if (id != -1)</code>. The function accepted "maybe T" while claiming it needed "T."</li>
+          <li><strong>Sentinel values</strong><br />Using in-band values (e.g., <code>-1</code>, <code>""</code>, <code>null</code>) to represent non-values while keeping the same type.</li>
+          <li><strong>Two-phase initialization</strong><br /><code>init()</code> / <code>update()</code> patterns that complete construction after the constructor. Construction MUST establish invariants. Pre-init objects are invalid states.</li>
+          <li><strong>Compensatory retry loops in the core</strong><br />See <a href="#ownership">Section 6.3</a>.</li>
+          <li><strong>Protective guards as policy in disguise</strong><br />Guard code that "makes it work anyway" rather than rejecting at the boundary or refining representation.</li>
+          <li><strong>Get-or-default mechanisms</strong><br />Mechanism choosing a fallback without structurally communicating that a fallback occurred.</li>
+          <li><strong>Optional fields in core interfaces</strong><br />See <a href="#boundary-core">Section 10.2</a>.</li>
+          <li><strong><code>None</code> as an enum variant</strong><br /><code>None</code> is still representing absence. The type exists or it doesn't. There is nothing to represent.</li>
+        </ol>
+
+        <hr />
+
+        <h2 id="litmus-tests">13. Litmus Tests</h2>
+
+        <h3>13.1 Enum/Flag Test</h3>
+
+        <p>An enum or flag is permissible only if changing it does not change which data members are valid.</p>
+
+        <p>If a flag changes which fields are meaningful, the representation is wrong. The data structure MUST change with the state.</p>
+
+        <h3>13.2 Memory Layout Test</h3>
+
+        <p>If the value of a flag or enum changed, would the same struct fields still be valid and meaningful? If no, the flag is encoding lifecycle state and violates <a href="#state-as-location">Section 8</a>.</p>
+
+        <h3>13.3 Optionality Test</h3>
+
+        <p>For every optional or nullable field in a core interface: why can this be absent?</p>
+
+        <p>The answer doesn't matter. The field shouldn't exist.</p>
+
+        <p>The existence of an object is the validity of its own completeness. If you have a <code>User</code>, the user is complete. If you have a <code>UserWithAllergies</code>, they have allergies. If they don't have allergies, you have a different type&mdash;one with no allergy field.</p>
+
+        <p>You don't check for presence. You don't handle absence. The type you hold is the fact.</p>
+
+        <h3>13.4 Review Question</h3>
+
+        <p>The mandatory design review question:</p>
+
+        <blockquote>
+          <p>"Which invalid states are currently representable, and what change would make them unrepresentable to the core?"</p>
+        </blockquote>
+
+        <p>A design is non-conforming if it relies on runtime detection inside the core for an invalid state that could be excluded by representation.</p>
+
+        <hr />
+
+        <h2 id="implementation">14. Implementation Notes</h2>
+
+        <p>These notes apply to statically typed languages with imperfect enforcement. Adapt to your language's constraints.</p>
+
+        <h3>14.1 Typestate</h3>
+        <p>Use move-only types, private constructors, friend factories, and APIs that prevent meaningful use after transition.</p>
+
+        <h3>14.2 Linearity</h3>
+        <p>Moved-from objects are not automatically unusable in most languages. Enforce emptiness via unique ownership or consumption APIs that make moved-from state inert.</p>
+
+        <h3>14.3 Parametricity</h3>
+        <p>Templates and generics are not inherently parametric. Enforce "generic means generic" via explicit project rules (<a href="#parametricity">Section 4.3</a>).</p>
+
+        <h3>14.4 Capability tokens</h3>
+        <p>Use types with restricted constructors and scope-bound lifetimes.</p>
+
+        <h3>14.5 State-as-location</h3>
+        <p>The type is the state. Containers herd; they don't enforce. Don't confuse "we only put ReadyEntities in this Vec" (convention) with state-as-location (types).</p>
+
+        <h3>14.6 Authority Boundaries</h3>
+        <p>Use access modifiers (<code>private</code>, <code>pub(crate)</code>, etc.) to define actual encapsulation boundaries.</p>
+
+        <h3>14.7 Zombie-state rule</h3>
+        <p>Because moved-from objects remain valid but unspecified in many languages, any design that relies on "move makes the old value unusable" MUST provide a constructive guarantee that the moved-from state is inert with respect to the capabilities that matter. If such a guarantee cannot be stated and verified, the design does not satisfy non-forking transitions.</p>
+
+        <hr />
+
+        <h2 id="limitations">15. Known Limitations</h2>
+
+        <h3>15.1 Concurrency and Async</h3>
+
+        <p>Concurrency is boundary logic.</p>
+
+        <p>Boundary logic lives at the system edge or in isolated modules whose sole purpose is to contain uncertainty. A concurrency module synchronizes, acquires, waits, and resolves races internally. It exposes synchronous, owned values to the core.</p>
+
+        <p>The core does not coordinate. The core does not share. The core receives and executes.</p>
+
+        <p>If concurrent logic is interleaved with core logic, redesign. Isolate the concurrency into a module that presents an IFA-conformant interface.</p>
+
+        <h3>15.2 Language Expressiveness</h3>
+
+        <p>No mainstream language fully enforces IFA. The architecture MUST:</p>
+        <ul>
+          <li>encode as much as the language permits,</li>
+          <li>make violation require explicit circumvention,</li>
+          <li>recognize that unencodable invariants are not IFA-conformant.</li>
+        </ul>
+
+        <hr />
+
+        <h2 id="checklist">16. Operational Definitions Checklist</h2>
+
+        <p>For a project to claim IFA conformance, it MUST provide explicit definitions for:</p>
+
+        <ol>
+          <li><strong>Invariant registry</strong>: A declared list of all invariants and their encoding mechanism.</li>
+          <li><strong>Authority Boundary map</strong>: For each proof object or controlled type, which code constitutes the Authority Boundary.</li>
+          <li><strong>Parametricity rules</strong>: Explicit bans on specialization and type-trait branching that would violate implementation agnosticism, plus review criteria.</li>
+          <li><strong>Move semantics rules</strong>: What counts as "unusable after transition" (e.g., resource-holding members must use unique ownership; moved-from objects must be provably inert).</li>
+        </ol>
+
+        <hr />
+
+        <h2 id="objections">17. Non-Acceptable Objections</h2>
+
+        <p>The following objections are invalid under IFA:</p>
+
+        <p><strong>"It's simpler this way."</strong><br />If "simple" means "easy to write" while increasing reasoning complexity, it is rejected. IFA optimizes for simplicity of reasoning, not ease of writing.</p>
+
+        <p><strong>"We'll be careful."</strong><br />Discipline is not architecture. If correctness depends on being careful, the invariant is not encoded.</p>
+
+        <p><strong>"We'll document it."</strong><br />Documentation is not enforcement. If the invalid state compiles, it will ship.</p>
+
+        <p><strong>"We'll assert it."</strong><br />Assertions detect invalid states after the architecture permitted them. This is non-conforming (<a href="#assertions">Section 11.1</a>).</p>
+
+        <p><strong>"We'll handle it later in the core."</strong><br />If the core contains logic to reject invalid states, those states were representable at the interface. Move rejection to the boundary.</p>
+
+        <p><strong>"The language can't enforce it."</strong><br />This is not permission to leave invalid states easy to reach. Make violation require circumvention (<a href="#assertions">Section 11.2</a>). If you can't, that component isn't IFA-conformant.</p>
+
+        <p><strong>"The domain allows absence."</strong><br />The domain is wrong. Restructure (<a href="#boundary-core">Section 10.2</a>).</p>
+
+        <hr />
+
+        <h2 id="closing">18. Closing Statement</h2>
+
+        <p>A system must encode all invariants.</p>
+
+        <p>"All" means all. Not "the ones we got to." Not "the important ones." All.</p>
+
+        <p>Failure to encode a known invariant is not a gap in the spec. It's a choice to leave invalid states representable. That choice has a name: negligence.</p>
+
+        <p>Ignorance is permissible&mdash;you can't encode what you don't know. But the moment you identify an invariant and choose not to encode it, you've chosen non-conformance.</p>
+
+        <div class="highlight-box">
+          <p><strong>The goal is a codebase where "it compiles" is a high-confidence statement of structural integrity.</strong> Not partial integrity. Not "mostly, except for the stuff we documented." Integrity.</p>
+        </div>
+
+        <div class="section-divider">...</div>
+
+        <p><a href="/architecture.html" class="related-link">Read the condensed overview</a></p>
+
+      </article>
+    </main>
+
+    <script>
+      (function() {
+        // Theme toggle logic
+        const toggle = document.querySelector('.theme-toggle');
+        const html = document.documentElement;
+
+        const saved = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (saved === 'dark' || (!saved && prefersDark)) {
+          html.setAttribute('data-theme', 'dark');
+        }
+
+        toggle.addEventListener('click', function() {
+          const isDark = html.getAttribute('data-theme') === 'dark';
+          const newTheme = isDark ? 'light' : 'dark';
+          html.setAttribute('data-theme', newTheme);
+          localStorage.setItem('theme', newTheme);
+        });
+      })();
+    </script>
+  </body>
+</html>
