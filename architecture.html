@@ -617,7 +617,7 @@ void serialize(const T& obj);</code></pre>
           <li><strong>Wrong:</strong> <code>TextureManager::get(id)</code> returns a default texture. The Manager decides "The game must go on."</li>
           <li><strong>Right:</strong> <code>TextureManager::available()</code> returns a read-only view of what exists. The Caller decides "I need this texture; if missing, I will trigger a loading screen."</li>
         </ul>
-        <p>The texture manager makes textures available. It doesn't need to know if each caller needs them. Callers can see what's available and decide for themselves.</p>
+        <p>The texture manager herds cats to food. It makes textures available. It doesn't need to know if each cat is hungry. Cats (callers) can see what's available and decide for themselves.</p>
         <p><strong>Semantic Rule:</strong> If a function returns "Fallback OR Real Data" without the type system distinguishing them, you have hidden a decision inside a data access.</p>
 
         <hr />
@@ -664,6 +664,9 @@ void serialize(const T& obj);</code></pre>
         <hr />
 
         <h2>On Assertions</h2>
+        <blockquote>
+          <p>"An assertion is an admission: you let the invalid state exist, and now you're calling for backup."</p>
+        </blockquote>
         <p>Guards catch invalid states that your types already permitted. If you're writing <code>assert</code>, you've already allowed the invalid state to exist. Encode the constraint in the type instead.</p>
 
         <hr />
