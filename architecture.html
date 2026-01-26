@@ -490,7 +490,7 @@
         <div class="highlight-box">
           <p><strong>Make invalid states unrepresentable.</strong></p>
         </div>
-        <p>We do not write code to "handle" invalid states; we design types so that invalid states cannot mathematically exist. Do not rely on programmer discipline, runtime checks, or documentation.</p>
+        <p>Design types so that invalid states cannot exist. Rely on types alone, not programmer discipline, runtime checks, or documentation.</p>
         <p>If invalid code compiles, the type definitions do not accurately reflect the domain. Successful compilation must be sufficient proof of structural validity.</p>
 
         <hr />
@@ -501,7 +501,7 @@
         <p>Games require a shuffled deck. A <code>Deck</code> object that <em>might</em> be shuffled is a lie. Nothing prevents <code>startGame(unshuffledDeck)</code>.</p>
 
         <h3>The Semantic Fix</h3>
-        <p>The <code>shuffle</code> function is not an action; it is a <strong>transition</strong>. It consumes the precursor state and emits the valid state.</p>
+        <p>The <code>shuffle</code> function is a <strong>transition</strong>. It consumes the precursor state and emits the valid state.</p>
 
 <pre><code>class Deck { ... }; // Represents a raw deck
 
@@ -517,7 +517,7 @@ class ShuffledDeck {
 void startGame(ShuffledDeck d);</code></pre>
 
         <h3>The Reality</h3>
-        <p>The types now mirror the physics of the domain. <code>Deck</code> and <code>ShuffledDeck</code> are not just different classes; they are different universes of validity. Move semantics prevent "use-after-transition," ensuring the timeline allows no forks.</p>
+        <p><code>Deck</code> and <code>ShuffledDeck</code> are different types with different capabilities. Move semantics prevent "use-after-transition," ensuring the timeline allows no forks.</p>
         <p><strong>The Return Type is the Proof of History.</strong></p>
 
         <hr />
@@ -528,7 +528,7 @@ void startGame(ShuffledDeck d);</code></pre>
         <p>A function taking <code>const vector&lt;Card&gt;&amp;</code> has too much power. It can inspect cards, log values, or branch logic based on specific suits.</p>
 
         <h3>The Semantic Fix</h3>
-        <p>Polymorphism is not just code reuse; it is Structural Blindness.</p>
+        <p>Polymorphism enforces structural blindness.</p>
 
 <pre><code>template &lt;typename T&gt;
 T get_first(const std::vector&lt;T&gt;& list);</code></pre>
@@ -605,8 +605,8 @@ void serialize(const T& obj);</code></pre>
         </ul>
 
         <h3>Corollary: The Retry Fallacy</h3>
-        <p>Retry loops inside the core are consensus failures—logic attempting to synchronize with itself. If you have to ask "did that work?" and try again, two components have different views of reality. Fix the ownership scope so disagreement is impossible.</p>
-        <p>(Retries at the boundary are adaptation to an unreliable world. Retries inside are architecture rot.)</p>
+        <p>Retry loops inside the core are consensus failures: logic attempting to synchronize with itself. If you have to ask "did that work?" and try again, two components have different views of reality. Fix the ownership scope so disagreement is impossible.</p>
+        <p>Retries belong at the boundary. Retries inside the core indicate architecture rot.</p>
 
         <hr />
 
@@ -617,7 +617,7 @@ void serialize(const T& obj);</code></pre>
           <li><strong>Wrong:</strong> <code>TextureManager::get(id)</code> returns a default texture. The Manager decides "The game must go on."</li>
           <li><strong>Right:</strong> <code>TextureManager::available()</code> returns a read-only view of what exists. The Caller decides "I need this texture; if missing, I will trigger a loading screen."</li>
         </ul>
-        <p>The texture manager herds cats to food—it makes textures available. It doesn't need to know if each cat is hungry. Cats (callers) can see what's available and decide for themselves.</p>
+        <p>The texture manager makes textures available. It doesn't need to know if each caller needs them. Callers can see what's available and decide for themselves.</p>
         <p><strong>Semantic Rule:</strong> If a function returns "Fallback OR Real Data" without the type system distinguishing them, you have hidden a decision inside a data access.</p>
 
         <hr />
@@ -626,14 +626,13 @@ void serialize(const T& obj);</code></pre>
         <div class="highlight-box">
           <p><strong>Existence is state.</strong></p>
         </div>
-        <p>Do not use <code>enum State</code> or <code>bool is_active</code> to track lifecycle. An object's state is defined by where it is, not what it contains.</p>
+        <p>Track lifecycle through container membership, not <code>enum State</code> or <code>bool is_active</code>. An object's state is defined by where it is.</p>
         <ul>
           <li><strong>Wrong:</strong> A list of objects with status flags (<code>Pending</code>, <code>Resident</code>). You must filter the list to find valid ones.</li>
           <li><strong>Right:</strong> Two containers: <code>pending_uploads</code> and <code>resident_textures</code>.</li>
         </ul>
         <p>To change state, you move the object from one container to another.</p>
-        <p><strong>Proof:</strong> If an object is in <code>m_resident</code>, it is resident. There is no flag to de-sync. The data structure <em>is</em> the state machine.</p>
-        <p><strong>Topology is Truth.</strong></p>
+        <p><strong>Proof:</strong> If an object is in <code>m_resident</code>, it is resident. There is no flag to de-sync.</p>
 
         <hr />
 
@@ -665,11 +664,7 @@ void serialize(const T& obj);</code></pre>
         <hr />
 
         <h2>On Assertions</h2>
-        <blockquote>
-          <p>"An assertion is a confession: you let the wrong world exist, and now you're policing its borders."</p>
-        </blockquote>
-        <p>Guards don't prevent invalid states. They catch invalid states that your types already permitted. The types are the border. If you're writing <code>assert</code>, you've already let the enemy inside the walls.</p>
-        <p><strong>Don't build a border patrol. Build a world with no illegal crossings.</strong></p>
+        <p>Guards catch invalid states that your types already permitted. If you're writing <code>assert</code>, you've already allowed the invalid state to exist. Encode the constraint in the type instead.</p>
 
         <hr />
 
@@ -776,21 +771,17 @@ void serialize(const T& obj);</code></pre>
         </table>
 
         <h3>Lock the door anyway.</h3>
-        <p>"C++ can't prevent X" is not an excuse to leave X easy. If you can't eliminate an invalid state, make it awkward to reach:</p>
+        <p>If you can't eliminate an invalid state, make it awkward to reach.</p>
         <ul>
           <li><strong>The Zombie State:</strong> C++ moves are non-destructive (source remains). Use <code>unique_ptr</code> to force emptiness, or destructive <code>consume() &&</code> methods.</li>
           <li><strong>Explicit Intent:</strong> Use rvalue-qualified methods to force "use-once" semantics where possible.</li>
         </ul>
-        <p>Saying "the language can't enforce it perfectly" is like saying "my car door doesn't prevent all theft." True—but you still lock it.</p>
+        <p>The language can't enforce it perfectly. Lock the door anyway.</p>
 
         <hr />
 
         <h2>The Test</h2>
-        <p>When reviewing a design, do not ask:</p>
-        <blockquote><p>"What happens if someone passes the wrong data?"</p></blockquote>
-        <p>Ask:</p>
-        <blockquote><p>"How do I make passing the wrong data a compile error?"</p></blockquote>
-        <p>We do not want to detect invalid state at runtime. We want to define invalid state out of existence.</p>
+        <p>When reviewing a design, ask: "How do I make passing the wrong data a compile error?" Define invalid state out of existence rather than detecting it at runtime.</p>
 
         <hr />
 

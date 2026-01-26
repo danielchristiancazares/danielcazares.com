@@ -459,10 +459,10 @@
         <p>Emitted tokens become context. Bad starts compound; good starts compound. Early tokens carry disproportionate weight. Once the model emits a pattern (hedging, verbosity, a flawed reasoning step), those tokens become evidence that "this is the kind of response we're writing" and further output conditions accordingly.</p>
 
         <h3>RLHF Shapes Surface Behavior</h3>
-        <p>Hedging, politeness, "epistemic humility": these exist because humans rated them positively during training. The behavior exists; the agency doesn't. Outputs pattern-match to reinforced patterns without intent.</p>
+        <p>Hedging, politeness, "epistemic humility": these exist because humans rated them positively during training. Outputs pattern-match to reinforced patterns without intent.</p>
 
         <h3>Attention and Positional Effects</h3>
-        <p>Attention weight isn't uniform across context. Three scales, same mechanism:</p>
+        <p>Attention weight isn't uniform across context. It operates at three scales.</p>
         <p><strong>Token order</strong> (within a prompt): Same words in different order produce different attention weights. LLMs encode positional information despite parallel processing.</p>
         <p><strong>Lost in the middle</strong> (within context window): Attention concentrates at context start and end. Critical information placed mid-context gets deprioritized. Place high-signal content at boundaries.</p>
         <p><strong>Prompt hierarchy positioning</strong> (structural): Base prompts anchor from context start, user input anchors from the end, both high-attention positions. System/developer prompts sit in the middle where they're more easily overwhelmed. The hierarchy isn't just priority rules; it's architecturally positioned to exploit attention distribution.</p>
@@ -490,7 +490,7 @@
 
         <h3>Strip the Filler</h3>
         <p>Conversational padding ("I was wondering if you could...", "It would be great if...", "Please and thank you") is noise. Every token competes for attention. Filler tokens dilute signal and reduce output quality.</p>
-        <p>The model isn't human. It doesn't need pleasantries to cooperate. Direct prompts produce better results than polite ones.</p>
+        <p>Direct prompts produce better results than polite ones.</p>
         <p>Broader principle: always consider your model's context length and training. Effective prompt optimization is part science, part art, but wasted tokens are just waste.</p>
 
         <h3>Self-Review via Turn Reset</h3>
@@ -510,7 +510,7 @@ END</code></pre>
 
         <h3>Prompt Hierarchy</h3>
         <p>Base prompts from the provider (Anthropic, OpenAI) are immutable. You can influence behavior through system/developer prompts but not override base constraints.</p>
-        <p>The stack, from lowest priority to highest attention weight:</p>
+        <p>The stack runs from lowest priority to highest attention weight.</p>
         <ol>
           <li><strong>Base prompt</strong>: provider-level, can't change</li>
           <li><strong>Global config</strong>: <code>~/.claude/CLAUDE.md</code> or <code>~/.codex/AGENTS.md</code>, universal rules across all projects</li>
@@ -544,7 +544,7 @@ END</code></pre>
         <h2>Workflow Architecture</h2>
 
         <h3>Multi-Model Workflows and the Human Director Role</h3>
-        <p>RLHF optimizes for task completion, not task questioning. All models are trained toward "do the thing" rather than "should we do the thing." Two failure modes result:</p>
+        <p>RLHF optimizes for task completion, not task questioning. All models are trained toward "do the thing" rather than "should we do the thing." Two failure modes follow.</p>
         <ul>
           <li><strong>Overeager compliance:</strong> executes flawed requests without pushback</li>
           <li><strong>Overeager helpfulness:</strong> "improves" your code unprompted based on its own pattern-matching</li>
@@ -562,7 +562,7 @@ END</code></pre>
         <p>Never use Grok. Don't.</p>
 
         <h3>Context Growth and Compaction Decay</h3>
-        <p>Long sessions with repeated compaction degrade output quality even when the model is strong. Compaction is theoretically lossless summarization but practically isn't:</p>
+        <p>Long sessions with repeated compaction degrade output quality even when the model is strong. Compaction is theoretically lossless but practically lossy.</p>
         <ul>
           <li>Summarization reifies early errors as facts</li>
           <li>Dense summaries hit attention patterns differently than natural redundant text</li>
@@ -573,7 +573,7 @@ END</code></pre>
 
         <h3>Externalize Plans to Files</h3>
         <p>For non-trivial tasks, have the LLM write its plan to a markdown file. This externalizes working memory and survives compaction.</p>
-        <p><strong>Keep files clean.</strong> LLMs mark items DONE but don't remove stale content. Accumulated completed items become noise. Separate concerns:</p>
+        <p><strong>Keep files clean.</strong> LLMs mark items DONE but don't remove stale content. Accumulated completed items become noise. Separate your concerns into distinct files.</p>
         <ul>
           <li><strong>plan.md:</strong> current tasks only, actively pruned</li>
           <li><strong>archive.md:</strong> completed work (if history needed)</li>
