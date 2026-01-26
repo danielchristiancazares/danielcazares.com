@@ -622,7 +622,7 @@
         <p>Any value or system state for which at least one required invariant does not hold.</p>
 
         <h4>Representable</h4>
-        <p>An invalid state is representable if there exists any program expression&mdash;available to code outside the Authority Boundary&mdash;that can construct or obtain a value or state that violates an invariant and still type-checks against an interface intended for core use.</p>
+        <p>An invalid state is representable if there exists any program expression, available to code outside the Authority Boundary, that can construct or obtain a value or state that violates an invariant and still type-checks against an interface intended for core use.</p>
 
         <h4>Unrepresentable (for the core)</h4>
         <p>An invalid state is unrepresentable for the core if no code outside the Authority Boundary can produce a value that violates the invariant and still satisfy the types (or equivalent interface constraints) required to invoke core operations.</p>
@@ -662,7 +662,7 @@
 
         <p>An implementation conforms to IFA only if, for every invariant required by core operations, core-callable interfaces require a representation that cannot encode a violation of that invariant.</p>
 
-        <p>Consequences:</p>
+        <p>Consequences of this rule.</p>
         <ul>
           <li>Core functions MUST NOT accept "maybe-valid" parameters for invariants that are required for correct operation.</li>
           <li>Core functions MUST NOT rely on:
@@ -705,7 +705,7 @@
 
         <p>A transition from state A to state B MUST prevent continued use of the "A" representation as if it still grants rights to act as state A.</p>
 
-        <p>Operationalization options include:</p>
+        <p>You can operationalize this with any of the following.</p>
         <ul>
           <li>linear/affine types,</li>
           <li>move-only types paired with an API that makes moved-from values unusable,</li>
@@ -727,7 +727,7 @@
 
         <p>A function that is declared generic over <code>T</code> and is not explicitly constrained to permit inspection of <code>T</code> MUST NOT incorporate any behavior that depends on inspecting the content of <code>T</code> values.</p>
 
-        <p>"Inspection" includes:</p>
+        <p>Inspection means any of the following.</p>
         <ul>
           <li>reading fields,</li>
           <li>invoking domain-specific methods,</li>
@@ -739,7 +739,7 @@
 
         <h3>4.3 Enforcement rule</h3>
 
-        <p>A function claiming parametric behavior MUST NOT use:</p>
+        <p>A function claiming parametric behavior MUST NOT use any of these.</p>
         <ul>
           <li>template specialization that changes semantics based on <code>T</code>,</li>
           <li><code>if constexpr</code> on type traits,</li>
@@ -792,7 +792,7 @@
 
         <p>If you can manage it, you own it. Anything you can prevent but don't is a design failure, not an external event.</p>
 
-        <p>This includes:</p>
+        <p>This includes failures you had the power to prevent.</p>
         <ul>
           <li>Memory allocation you could have pre-allocated or pooled,</li>
           <li>Lock contention you could have eliminated through ownership design,</li>
@@ -830,7 +830,7 @@
 
         <p>If a lifecycle state changes (a) which operations are valid, or (b) which data members are valid/meaningful, then that lifecycle state MUST be represented as a distinct type (typestate/variant).</p>
 
-        <p>The type is the state. A <code>HungryCat</code> eats. A <code>Cat</code> doesn't. The container herds; it doesn't enforce. The type is the enforcement.</p>
+        <p>The type is the state. A <code>HungryCat</code> has an <code>eat()</code> method. A <code>Cat</code> does not.</p>
 
         <p>A boolean, enum, or flag MUST NOT be used to represent lifecycle state.</p>
 
@@ -869,7 +869,7 @@
 
         <h3>10.1 Requirement: Boundary code MUST convert; core code MUST assume</h3>
 
-        <p>IFA replaces "validate everywhere" with a strict conversion discipline:</p>
+        <p>IFA replaces "validate everywhere" with a strict conversion discipline.</p>
         <ul>
           <li>The boundary MUST accept messy input and convert it into strict representations.</li>
           <li>The core MUST accept only strict representations.</li>
@@ -878,7 +878,7 @@
 
         <h3>10.2 Optionality is domain failure</h3>
 
-        <p>Core interfaces MUST NOT accept:</p>
+        <p>Core interfaces MUST NOT accept any of these.</p>
         <ul>
           <li>nullable pointers,</li>
           <li><code>optional&lt;T&gt;</code>,</li>
@@ -886,9 +886,7 @@
           <li>out-parameters that might not be written.</li>
         </ul>
 
-        <p>If something can be absent, the domain is wrong. Restructure until absence is not a concept that requires representation.</p>
-
-        <p>The type is the state. There is no <code>None</code> variant, no null case. You have the thing or the type doesn't exist.</p>
+        <p>If something can be absent, restructure until absence is not a concept that requires representation.</p>
 
         <hr />
 
@@ -908,13 +906,13 @@
 
         <p>The test: if someone violates the invariant, did they have to try? If the violation was the path of least resistance, the design is non-conforming.</p>
 
-        <p>If the invariant cannot be encoded at all, that component is not IFA-conformant. There is no exception register. There are no documented gaps. The invariant is encoded or it isn't. Partial credit doesn't exist.</p>
+        <p>If the invariant cannot be encoded at all, that component is not IFA-conformant. The invariant is encoded or it isn't.</p>
 
         <hr />
 
         <h2 id="non-conforming">12. Non-Conforming Patterns</h2>
 
-        <p>The following are structural anti-patterns under IFA. Each indicates that an invariant exists but is not encoded:</p>
+        <p>The following are structural anti-patterns under IFA. Each indicates an invariant that exists but is not encoded.</p>
 
         <ol>
           <li><strong>State-dependent validity via flags</strong><br />A flag determines which fields are valid, but all fields exist simultaneously. Use distinct types.</li>
@@ -948,13 +946,11 @@
 
         <p>The answer doesn't matter. The field shouldn't exist.</p>
 
-        <p>The existence of an object is the validity of its own completeness. If you have a <code>User</code>, the user is complete. If you have a <code>UserWithAllergies</code>, they have allergies. If they don't have allergies, you have a different type&mdash;one with no allergy field.</p>
-
-        <p>You don't check for presence. You don't handle absence. The type you hold is the fact.</p>
+        <p>If you have a <code>User</code>, the user is complete. If you have a <code>UserWithAllergies</code>, they have allergies. If they don't have allergies, you have a different type with no allergy field. The type you hold is the fact.</p>
 
         <h3>13.4 Review Question</h3>
 
-        <p>The mandatory design review question:</p>
+        <p>The mandatory design review question is this.</p>
 
         <blockquote>
           <p>"Which invalid states are currently representable, and what change would make them unrepresentable to the core?"</p>
@@ -981,7 +977,7 @@
         <p>Use types with restricted constructors and scope-bound lifetimes.</p>
 
         <h3>14.5 State-as-location</h3>
-        <p>The type is the state. Containers herd; they don't enforce. Don't confuse "we only put ReadyEntities in this Vec" (convention) with state-as-location (types).</p>
+        <p>The type is the state. "We only put ReadyEntities in this Vec" is convention, not state-as-location.</p>
 
         <h3>14.6 Authority Boundaries</h3>
         <p>Use access modifiers (<code>private</code>, <code>pub(crate)</code>, etc.) to define actual encapsulation boundaries.</p>
@@ -999,13 +995,13 @@
 
         <p>Boundary logic lives at the system edge or in isolated modules whose sole purpose is to contain uncertainty. A concurrency module synchronizes, acquires, waits, and resolves races internally. It exposes synchronous, owned values to the core.</p>
 
-        <p>The core does not coordinate. The core does not share. The core receives and executes.</p>
+        <p>The core receives owned values and executes on them without coordination.</p>
 
         <p>If concurrent logic is interleaved with core logic, redesign. Isolate the concurrency into a module that presents an IFA-conformant interface.</p>
 
         <h3>15.2 Language Expressiveness</h3>
 
-        <p>No mainstream language fully enforces IFA. The architecture MUST:</p>
+        <p>No mainstream language fully enforces IFA. The architecture MUST do all of the following.</p>
         <ul>
           <li>encode as much as the language permits,</li>
           <li>make violation require explicit circumvention,</li>
@@ -1016,7 +1012,7 @@
 
         <h2 id="checklist">16. Operational Definitions Checklist</h2>
 
-        <p>For a project to claim IFA conformance, it MUST provide explicit definitions for:</p>
+        <p>For a project to claim IFA conformance, it MUST provide explicit definitions for the following.</p>
 
         <ol>
           <li><strong>Invariant registry</strong>: A declared list of all invariants and their encoding mechanism.</li>
@@ -1029,7 +1025,7 @@
 
         <h2 id="objections">17. Non-Acceptable Objections</h2>
 
-        <p>The following objections are invalid under IFA:</p>
+        <p>The following objections are invalid under IFA.</p>
 
         <p><strong>"It's simpler this way."</strong><br />If "simple" means "easy to write" while increasing reasoning complexity, it is rejected. IFA optimizes for simplicity of reasoning, not ease of writing.</p>
 
@@ -1041,9 +1037,9 @@
 
         <p><strong>"We'll handle it later in the core."</strong><br />If the core contains logic to reject invalid states, those states were representable at the interface. Move rejection to the boundary.</p>
 
-        <p><strong>"The language can't enforce it."</strong><br />This is not permission to leave invalid states easy to reach. Make violation require circumvention (<a href="#assertions">Section 11.2</a>). If you can't, that component isn't IFA-conformant.</p>
+        <p><strong>"The language can't enforce it."</strong><br />Make violation require circumvention (<a href="#assertions">Section 11.2</a>). If you can't, that component isn't IFA-conformant.</p>
 
-        <p><strong>"The domain allows absence."</strong><br />The domain is wrong. Restructure (<a href="#boundary-core">Section 10.2</a>).</p>
+        <p><strong>"The domain allows absence."</strong><br />Restructure (<a href="#boundary-core">Section 10.2</a>).</p>
 
         <hr />
 
@@ -1051,14 +1047,12 @@
 
         <p>A system must encode all invariants.</p>
 
-        <p>"All" means all. Not "the ones we got to." Not "the important ones." All.</p>
+        <p>Failure to encode a known invariant is a choice to leave invalid states representable.</p>
 
-        <p>Failure to encode a known invariant is not a gap in the spec. It's a choice to leave invalid states representable. That choice has a name: negligence.</p>
-
-        <p>Ignorance is permissible&mdash;you can't encode what you don't know. But the moment you identify an invariant and choose not to encode it, you've chosen non-conformance.</p>
+        <p>You can't encode what you don't know. But the moment you identify an invariant and choose not to encode it, you've chosen non-conformance.</p>
 
         <div class="highlight-box">
-          <p><strong>The goal is a codebase where "it compiles" is a high-confidence statement of structural integrity.</strong> Not partial integrity. Not "mostly, except for the stuff we documented." Integrity.</p>
+          <p><strong>The goal is a codebase where "it compiles" is a high-confidence statement of structural integrity.</strong></p>
         </div>
 
         <div class="section-divider">...</div>
