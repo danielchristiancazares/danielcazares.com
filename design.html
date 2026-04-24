@@ -1,0 +1,1149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Design System — Daniel Cazares</title>
+    <meta name="description" content="Design system showcase: all component variants used on danielcazares.com." />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#17140f" />
+
+    <link rel="icon" href="/favicon.svg" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Space+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Theme flash-guard: apply stored/preferred theme before first paint -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          var prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+          var theme = saved || (prefersLight ? 'light' : 'dark');
+          if (theme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    <style>
+      /* ============================================================
+         DESIGN TOKENS
+         :root = dark default; [data-theme="light"] = override
+         ============================================================ */
+      :root {
+        color-scheme: dark light;
+
+        /* Core palette — dark base */
+        --paper: #17140f;
+        --ink: #f1ebe0;
+        --muted: #d6cfc2;
+        --meta: #a09787;
+
+        /* Accents — exactly two tints */
+        --accent: #e8755a;          /* interactive / status only */
+        --accent-muted: #b3887a;    /* tech chips / secondary accent text */
+        --accent-2: #4db3c7;
+
+        /* Derived accent tints */
+        --accent-tint: rgba(232, 117, 90, 0.10);
+        --accent-radial: rgba(232, 117, 90, 0.08);
+        --accent-glow: rgba(232, 117, 90, 0.28);
+
+        /* Status pill palette */
+        --status-shipped: var(--accent);
+        --status-shipped-tint: var(--accent-tint);
+        --status-in-progress: #d4a040;
+        --status-in-progress-tint: rgba(212, 160, 64, 0.10);
+        --status-research: #8b8cc7;
+        --status-research-tint: rgba(139, 140, 199, 0.10);
+        --status-archived: #8a8478;
+        --status-archived-tint: rgba(138, 132, 120, 0.10);
+
+        /* Primary button text — dark on bright coral */
+        --btn-primary-text: #14100a;
+
+        /* Surfaces & lines */
+        --surface: rgba(28, 24, 20, 0.55);
+        --surface-strong: rgba(32, 28, 24, 0.80);
+        --nav-bg: rgba(23, 20, 15, 0.78);
+        --line: rgba(241, 235, 224, 0.10);
+        --line-strong: rgba(241, 235, 224, 0.22);
+        --tint-subtle: rgba(241, 235, 224, 0.04);
+        --tint-hover: rgba(241, 235, 224, 0.09);
+
+        /* Shadows */
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.30);
+        --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.35);
+        --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.50);
+
+        /* Radii */
+        --radius-sm: 8px;
+        --radius-md: 14px;
+        --radius-lg: 22px;
+        --radius-pill: 999px;
+
+        /* Spacing — 8px scale */
+        --space-1: 4px;
+        --space-2: 8px;
+        --space-3: 12px;
+        --space-4: 16px;
+        --space-5: 20px;
+        --space-6: 24px;
+        --space-7: 28px;
+        --space-8: 32px;
+        --space-10: 40px;
+        --space-12: 48px;
+        --space-16: 64px;
+        --space-20: 80px;
+        --space-24: 96px;
+        --space-32: 128px;
+
+        /* Type scale (rem-based) */
+        --fs-display: clamp(2.5rem, 5.5vw, 5rem);
+        --fs-h2: clamp(1.75rem, 4vw, 2.5rem);
+        --fs-h3: 1.25rem;
+        --fs-lead: 1.125rem;
+        --fs-body: 1rem;
+        --fs-small: 0.8125rem;
+        --fs-xsmall: 0.75rem;
+
+        /* Background gradients */
+        --bg-grad-1: #2a2420;
+        --bg-grad-2: #2c2420;
+        --bg-grad-3: #1c1815;
+        --bg-grad-4: #141210;
+        --pattern-color: rgba(241, 235, 224, 0.045);
+      }
+
+      [data-theme="light"] {
+        --paper: #f6f1e6;
+        --ink: #1d1912;
+        --muted: #4c4336;
+        --meta: #746857;
+
+        --accent: #c6502f;
+        --accent-muted: #935e50;
+        --accent-2: #1f6f80;
+
+        --accent-tint: rgba(198, 80, 47, 0.10);
+        --accent-radial: rgba(198, 80, 47, 0.08);
+        --accent-glow: rgba(198, 80, 47, 0.25);
+
+        --status-shipped: var(--accent);
+        --status-shipped-tint: var(--accent-tint);
+        --status-in-progress: #9a7020;
+        --status-in-progress-tint: rgba(154, 112, 32, 0.10);
+        --status-research: #5a5e98;
+        --status-research-tint: rgba(90, 94, 152, 0.10);
+        --status-archived: #7a7368;
+        --status-archived-tint: rgba(122, 115, 104, 0.10);
+
+        --btn-primary-text: #fbf5ea;
+
+        --surface: rgba(255, 255, 255, 0.60);
+        --surface-strong: rgba(255, 255, 255, 0.85);
+        --nav-bg: rgba(246, 241, 230, 0.78);
+        --line: rgba(29, 25, 18, 0.12);
+        --line-strong: rgba(29, 25, 18, 0.25);
+        --tint-subtle: rgba(29, 25, 18, 0.04);
+        --tint-hover: rgba(29, 25, 18, 0.08);
+
+        --shadow-sm: 0 2px 8px rgba(31, 22, 12, 0.08);
+        --shadow-md: 0 10px 28px rgba(31, 22, 12, 0.14);
+        --shadow-lg: 0 24px 60px rgba(31, 22, 12, 0.20);
+
+        --bg-grad-1: #fdebd0;
+        --bg-grad-2: #f7c9ad;
+        --bg-grad-3: #f8f3e8;
+        --bg-grad-4: #efe6d6;
+        --pattern-color: rgba(29, 25, 18, 0.030);
+      }
+
+      /* ============================================================
+         RESET & BASE
+         ============================================================ */
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        min-height: 100vh;
+        font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+        font-size: var(--fs-body);
+        line-height: 1.6;
+        color: var(--ink);
+        background: var(--paper);
+        position: relative;
+        overflow-x: hidden;
+        transition: background 0.3s ease, color 0.3s ease;
+      }
+
+      a { color: inherit; text-decoration: none; }
+
+      button {
+        font: inherit;
+        color: inherit;
+        background: none;
+        border: none;
+        cursor: pointer;
+      }
+
+      ul { list-style: none; }
+
+      /* ============================================================
+         BACKGROUND LAYERS
+         ============================================================ */
+      .bg-layer {
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        overflow: hidden;
+        pointer-events: none;
+        background: linear-gradient(180deg, var(--bg-grad-3) 0%, var(--bg-grad-4) 100%);
+        transition: background 0.3s ease;
+      }
+
+      .bg-blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(100px);
+        opacity: 0.5;
+      }
+      .bg-blob-1 {
+        top: -12%; left: -12%;
+        width: 48vw; height: 48vw;
+        background: var(--bg-grad-1);
+        animation: float1 28s infinite alternate ease-in-out;
+      }
+      .bg-blob-2 {
+        bottom: 18%; right: -14%;
+        width: 42vw; height: 42vw;
+        background: var(--bg-grad-2);
+        animation: float2 22s infinite alternate ease-in-out;
+      }
+      @keyframes float1 {
+        0%   { transform: translate(0, 0) rotate(0deg); }
+        100% { transform: translate(80px, 40px) rotate(15deg); }
+      }
+      @keyframes float2 {
+        0%   { transform: translate(0, 0) rotate(0deg); }
+        100% { transform: translate(-70px, -30px) rotate(-12deg); }
+      }
+
+      /* Coral radial behind hero — draws eye to Currently card */
+      .bg-radial {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: -1;
+        background: radial-gradient(
+          600px circle at 85% 12%,
+          var(--accent-radial),
+          transparent 70%
+        );
+        transition: background 0.3s ease;
+      }
+
+      /* Subtle diagonal grain */
+      .bg-grain {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        background: repeating-linear-gradient(
+          135deg,
+          var(--pattern-color) 0,
+          var(--pattern-color) 1px,
+          transparent 1px,
+          transparent 13px
+        );
+      }
+
+      /* ============================================================
+         TOP NAV
+         ============================================================ */
+      .top-nav {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 50;
+        padding: var(--space-4) clamp(var(--space-5), 4vw, var(--space-8));
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--nav-bg);
+        backdrop-filter: blur(10px) saturate(140%);
+        -webkit-backdrop-filter: blur(10px) saturate(140%);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .nav-mark {
+        font-family: "Fraunces", "Georgia", serif;
+        font-weight: 700;
+        font-size: 1.2rem;
+        letter-spacing: 0.02em;
+        color: var(--ink);
+      }
+
+      .theme-toggle {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--line-strong);
+        border-radius: 50%;
+        background: var(--surface);
+        color: var(--ink);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          transform 0.2s ease,
+          background 0.2s ease,
+          border-color 0.2s ease;
+      }
+      .theme-toggle:hover {
+        border-color: var(--accent);
+        background: var(--surface-strong);
+        transform: translateY(-1px);
+      }
+      .theme-toggle svg {
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        transition: opacity 0.25s ease, transform 0.25s ease;
+      }
+      /* Dark default: show sun */
+      .theme-toggle .icon-sun  { opacity: 1; transform: rotate(0); }
+      .theme-toggle .icon-moon { opacity: 0; transform: rotate(90deg); }
+      [data-theme="light"] .theme-toggle .icon-sun  { opacity: 0; transform: rotate(-90deg); }
+      [data-theme="light"] .theme-toggle .icon-moon { opacity: 1; transform: rotate(0); }
+
+      /* ============================================================
+         MAIN LAYOUT
+         ============================================================ */
+      main {
+        position: relative;
+        z-index: 1;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding:
+          calc(64px + 7vh)
+          clamp(var(--space-5), 4vw, var(--space-8))
+          var(--space-20);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-32);
+      }
+
+      section {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-8);
+      }
+
+      section h2 {
+        font-family: "Fraunces", "Georgia", serif;
+        font-size: var(--fs-h2);
+        font-weight: 500;
+        line-height: 1.1;
+        letter-spacing: -0.01em;
+        font-feature-settings: "ss01", "cv11";
+      }
+
+      /* ============================================================
+         HERO
+         ============================================================ */
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+        gap: var(--space-8);
+        align-items: stretch;
+        position: relative;
+        min-height: calc(93vh - 262px);
+        padding-bottom: var(--space-16);
+      }
+
+      .hero-left {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-6);
+      }
+
+      .wordmark {
+        font-family: "Fraunces", "Georgia", serif;
+        font-weight: 700;
+        font-size: var(--fs-display);
+        line-height: 1;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+        white-space: nowrap;
+        font-feature-settings: "ss01", "cv11";
+        animation: wordmark-in 0.4s ease-in 0.05s both;
+      }
+      @keyframes wordmark-in {
+        from { letter-spacing: -0.1em;  opacity: 0; }
+        to   { letter-spacing: -0.02em; opacity: 1; }
+      }
+
+      .lead {
+        font-size: var(--fs-lead);
+        line-height: 1.55;
+        color: var(--muted);
+        max-width: 42ch;
+      }
+
+      .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+        margin-top: var(--space-2);
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+        padding: var(--space-3) var(--space-6);
+        border-radius: var(--radius-pill);
+        font-weight: 600;
+        font-size: 0.95rem;
+        letter-spacing: 0.01em;
+        line-height: 1.2;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease,
+          background 0.2s ease,
+          border-color 0.2s ease;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: var(--btn-primary-text);
+        border: 1px solid var(--accent);
+      }
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px var(--accent-glow);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid var(--line-strong);
+      }
+      .btn-ghost:hover {
+        transform: translateY(-1px);
+        border-color: var(--accent);
+        box-shadow:
+          0 0 0 1px var(--accent) inset,
+          0 8px 24px var(--accent-glow);
+      }
+
+      /* "Currently" — demoted, bottom-aligned with the button row */
+      .hero-right {
+        align-self: end;
+        padding: var(--space-5);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+      }
+
+      .status-label {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-size: var(--fs-small);
+        font-weight: 500;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--meta);
+      }
+      .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 0 var(--accent-glow);
+        animation: pulse-dot 2.2s ease-out infinite;
+      }
+      @keyframes pulse-dot {
+        0%         { box-shadow: 0 0 0 0   var(--accent-glow); }
+        80%, 100%  { box-shadow: 0 0 0 10px rgba(232, 117, 90, 0); }
+      }
+
+      .status-desc {
+        font-size: 0.95rem;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+      .status-cta {
+        font-size: var(--fs-small);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: var(--accent);
+      }
+
+      /* Scroll affordance at hero bottom */
+      .scroll-cue {
+        position: absolute;
+        bottom: var(--space-4);
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-2);
+        color: var(--meta);
+        font-size: var(--fs-xsmall);
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        text-decoration: none;
+        animation: cue-in 0.6s ease 0.5s both;
+        transition: color 0.2s ease;
+      }
+      .scroll-cue:hover { color: var(--accent); }
+      .scroll-cue-chevron {
+        width: 18px;
+        height: 18px;
+        animation: bob 2s ease-in-out infinite;
+      }
+      @keyframes cue-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes bob {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(5px); }
+      }
+
+      /* ============================================================
+         SELECTED WORK — outlined cards with subtle inner gradient
+         ============================================================ */
+      .card-media {
+        aspect-ratio: 16 / 9;
+        overflow: hidden;
+        margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) 0;
+      }
+      .card-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .card-media[data-media-type="gradient"] {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background:
+          repeating-linear-gradient(
+            135deg,
+            var(--pattern-color) 0,
+            var(--pattern-color) 1px,
+            transparent 1px,
+            transparent 13px
+          ),
+          var(--accent-tint);
+      }
+      .card-media[data-media-type="gradient"] .media-icon {
+        width: 48px;
+        height: 48px;
+        color: var(--accent);
+        opacity: 0.5;
+      }
+
+      .work-grid {
+        display: grid;
+        gap: var(--space-6);
+      }
+      .work-card {
+        position: relative;
+        padding: var(--space-5);
+        border-radius: var(--radius-md);
+        background:
+          linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(0,0,0,0.02)),
+          var(--surface);
+        border: 1px solid var(--line);
+        overflow: hidden;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        transition:
+          transform 0.15s ease-out,
+          box-shadow 0.3s ease,
+          border-color 0.3s ease;
+      }
+      /* 1px accent-colored left border on hover */
+      .work-card::before {
+        content: "";
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 2px;
+        background: var(--accent);
+        opacity: 0;
+        transition: opacity 0.25s ease;
+      }
+      .work-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--line-strong);
+      }
+      .work-card:hover::before { opacity: 1; }
+
+      .work-head {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        flex-wrap: wrap;
+      }
+      .work-icon {
+        width: 22px;
+        height: 22px;
+        color: var(--accent);
+        flex-shrink: 0;
+      }
+      .work-title {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 600;
+        font-size: var(--fs-h3);
+        line-height: 1.3;
+        letter-spacing: -0.005em;
+        color: var(--ink);
+        flex: 1 1 auto;
+      }
+      .status-pill {
+        font-size: var(--fs-xsmall);
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        padding: 4px 10px;
+        border-radius: var(--radius-pill);
+        color: var(--status-in-progress);
+        border: 1px solid var(--status-in-progress);
+        background: var(--status-in-progress-tint);
+      }
+      .status-pill[data-status="shipped"] {
+        color: var(--status-shipped);
+        border-color: var(--status-shipped);
+        background: var(--status-shipped-tint);
+      }
+      .status-pill[data-status="research"] {
+        color: var(--status-research);
+        border-color: var(--status-research);
+        background: var(--status-research-tint);
+      }
+      .status-pill[data-status="archived"] {
+        color: var(--status-archived);
+        border-color: var(--status-archived);
+        background: var(--status-archived-tint);
+      }
+      .work-desc {
+        color: var(--muted);
+        line-height: 1.6;
+        font-size: 0.95rem;
+      }
+      .tech-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2) var(--space-3);
+        font-size: var(--fs-small);
+        color: var(--accent-muted);
+        font-weight: 500;
+        letter-spacing: 0.01em;
+        margin-top: var(--space-1);
+      }
+
+      /* ============================================================
+         WRITING & CREATIVE — full-width rows, no box
+         ============================================================ */
+      .writing-list {
+        display: flex;
+        flex-direction: column;
+      }
+      .writing-list li {
+        border-bottom: 1px solid var(--line);
+      }
+      .writing-list li:first-child {
+        border-top: 1px solid var(--line);
+      }
+
+      .writing-item {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        align-items: center;
+        gap: var(--space-4);
+        padding: var(--space-5) var(--space-2);
+        position: relative;
+        transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+
+      .writing-title {
+        font-size: 1.05rem;
+        font-weight: 500;
+        color: var(--ink);
+        position: relative;
+        line-height: 1.3;
+      }
+      /* Coral underline grows L→R on hover */
+      .writing-title::after {
+        content: "";
+        position: absolute;
+        left: 0; bottom: -3px;
+        height: 1.5px;
+        width: 0;
+        background: var(--accent);
+        transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+
+      .writing-tag {
+        font-size: var(--fs-small);
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--meta);
+        white-space: nowrap;
+      }
+
+      .writing-arrow {
+        color: var(--accent);
+        font-size: 1.1rem;
+        line-height: 1;
+        opacity: 0;
+        transform: translateX(-6px);
+        transition: opacity 0.25s ease, transform 0.25s ease;
+        min-width: 1em;
+        text-align: right;
+      }
+
+      a.writing-item:hover { transform: translateX(4px); }
+      a.writing-item:hover .writing-title::after { width: 100%; }
+      a.writing-item:hover .writing-arrow {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      a.writing-item:focus-visible {
+        outline-offset: -2px;
+        border-radius: var(--radius-sm);
+      }
+
+      .writing-item[data-state="coming-soon"],
+      .writing-item[data-state="draft"] {
+        opacity: 0.55;
+        cursor: default;
+      }
+      .writing-item[data-state="coming-soon"] .writing-arrow,
+      .writing-item[data-state="draft"] .writing-arrow {
+        display: none;
+      }
+
+      /* ============================================================
+         MUSIC EMBED — collapse when empty
+         ============================================================ */
+      .music-embed:empty {
+        display: none;
+      }
+      .music-embed {
+        border-radius: var(--radius-md);
+        overflow: hidden;
+      }
+      .music-embed iframe {
+        width: 100%;
+        border: none;
+        display: block;
+      }
+
+      /* ============================================================
+         CHIPS — Music, Interests (shared tokens with .btn)
+         ============================================================ */
+      .chip-row,
+      .interest-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        padding: var(--space-3) var(--space-6);
+        border-radius: var(--radius-pill);
+        background: var(--tint-subtle);
+        border: none;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--ink);
+        transition: background 0.2s ease, transform 0.2s ease;
+      }
+      .chip:hover,
+      a.chip:hover,
+      button.chip:hover {
+        background: var(--tint-hover);
+        transform: translateY(-1px);
+      }
+
+      /* ============================================================
+         FOOTER
+         ============================================================ */
+      footer {
+        margin-top: var(--space-4);
+        padding-top: var(--space-6);
+        border-top: 1px solid var(--line);
+        font-size: var(--fs-small);
+        color: var(--meta);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+        letter-spacing: 0.02em;
+      }
+      .footer-links {
+        display: flex;
+        gap: var(--space-3);
+      }
+      .footer-link {
+        display: inline-flex;
+        align-items: center;
+        padding: var(--space-2) var(--space-4);
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--line-strong);
+        font-size: var(--fs-small);
+        font-weight: 500;
+        color: var(--ink);
+        text-decoration: none;
+        transition:
+          transform 0.2s ease,
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+      .footer-link:hover {
+        transform: translateY(-1px);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px var(--accent) inset;
+      }
+
+      /* ============================================================
+         RESPONSIVE
+         ============================================================ */
+      @media (max-width: 900px) {
+        .hero {
+          grid-template-columns: 1fr;
+          gap: var(--space-8);
+          align-items: start;
+        }
+        .hero-right {
+          order: 3;
+          align-self: stretch;
+        }
+        .wordmark { white-space: normal; }
+      }
+
+      @media (max-width: 600px) {
+        main {
+          padding: calc(56px + 4vh) var(--space-5) var(--space-16);
+          gap: var(--space-20);
+        }
+        .top-nav {
+          padding: var(--space-3) var(--space-5);
+        }
+        .writing-item {
+          grid-template-columns: 1fr auto;
+          gap: var(--space-2);
+          padding: var(--space-4) var(--space-2);
+        }
+        .writing-arrow { display: none; }
+        footer {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .btn-row {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .btn { width: 100%; }
+      }
+
+      /* iOS Safari — disable heavy blur for perf */
+      @supports (-webkit-touch-callout: none) {
+        .bg-blob { filter: blur(50px); animation: none; }
+        .hero-right,
+        .work-card,
+        .top-nav,
+        .theme-toggle {
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .bg-blob { filter: blur(50px); animation: none; }
+        .bg-grain {
+          background-size: auto;
+          opacity: 0.6;
+        }
+      }
+
+      /* ============================================================
+         ENTRANCE ANIMATIONS
+         ============================================================ */
+      @keyframes rise {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .hero-right,
+      section,
+      footer {
+        animation: rise 0.6s ease-out both;
+      }
+      .hero-right { animation-delay: 0.15s; }
+
+      .work-card { animation: rise 0.6s ease-out both; }
+      .work-card:nth-child(1) { animation-delay: 0.20s; }
+      .work-card:nth-child(2) { animation-delay: 0.28s; }
+      .work-card:nth-child(3) { animation-delay: 0.36s; }
+
+      /* ============================================================
+         ACCESSIBILITY
+         ============================================================ */
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+        border-radius: var(--radius-sm);
+      }
+      .btn:focus-visible,
+      .theme-toggle:focus-visible { outline-offset: 3px; }
+
+      .skip-link {
+        position: absolute;
+        top: -100px;
+        left: var(--space-4);
+        padding: var(--space-3) var(--space-4);
+        background: var(--ink);
+        color: var(--paper);
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        z-index: 100;
+        transition: top 0.2s ease;
+      }
+      .skip-link:focus { top: var(--space-4); }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px; height: 1px;
+        padding: 0; margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg-layer" aria-hidden="true">
+      <div class="bg-blob bg-blob-1"></div>
+      <div class="bg-blob bg-blob-2"></div>
+    </div>
+    <div class="bg-grain" aria-hidden="true"></div>
+
+    <nav class="top-nav" aria-label="Top">
+      <a href="/" class="nav-mark" aria-label="Back to home">DC</a>
+      <button
+        class="theme-toggle"
+        type="button"
+        aria-label="Switch to light mode"
+        title="Toggle theme"
+      >
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+        </svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </nav>
+
+    <main id="main-content">
+      <header>
+        <h1 class="wordmark" style="font-size: clamp(2rem, 4vw, 3rem);">Design System</h1>
+        <p class="lead">All component variants used on danielcazares.com. Toggle the theme in the top-right to see both modes. This page is <code>noindex</code>.</p>
+      </header>
+
+      <!-- Status pills -->
+      <section aria-labelledby="ds-status-heading">
+        <h2 id="ds-status-heading">Status pills</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center;">
+          <span class="status-pill" data-status="shipped">Shipped</span>
+          <span class="status-pill">In Progress</span>
+          <span class="status-pill" data-status="research">Research</span>
+          <span class="status-pill" data-status="archived">Archived</span>
+        </div>
+        <p style="color: var(--meta); font-size: var(--fs-small);">Default (no data-status) renders <code>in-progress</code>.</p>
+      </section>
+
+      <!-- Project card variants -->
+      <section aria-labelledby="ds-cards-heading">
+        <h2 id="ds-cards-heading">Project cards</h2>
+        <div class="work-grid">
+
+          <article class="work-card">
+            <div class="card-media" data-media-type="image">
+              <img src="/spacecraft.webp" alt="Shipped example with image" loading="lazy" decoding="async" width="800" height="450">
+            </div>
+            <div class="work-head">
+              <svg class="work-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              <h3 class="work-title">Card with image — Shipped</h3>
+              <span class="status-pill" data-status="shipped">Shipped</span>
+            </div>
+            <p class="work-desc">Card variant with a raster image in the <code>card-media</code> slot and a shipped status.</p>
+            <div class="tech-list">C++ · Vulkan · GLSL</div>
+          </article>
+
+          <article class="work-card">
+            <div class="card-media" data-media-type="gradient">
+              <svg class="media-icon work-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <div class="work-head">
+              <svg class="work-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <h3 class="work-title">Card with gradient fallback — Research</h3>
+              <span class="status-pill" data-status="research">Research</span>
+            </div>
+            <p class="work-desc">Procedural placeholder: coral tint over hatch pattern with icon centered. Used when a project has no hero image yet.</p>
+            <div class="tech-list">C++ · CUDA · Differential Geometry</div>
+          </article>
+
+          <article class="work-card">
+            <div class="work-head">
+              <svg class="work-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"></path></svg>
+              <h3 class="work-title">Card without media — In Progress</h3>
+              <span class="status-pill">In Progress</span>
+            </div>
+            <p class="work-desc">Media slot omitted entirely. Card retains the same padding and rhythm; only the top visual is missing.</p>
+            <div class="tech-list">Kafka · Distributed Systems</div>
+          </article>
+
+          <article class="work-card">
+            <div class="work-head">
+              <svg class="work-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <h3 class="work-title">Card without media — Archived</h3>
+              <span class="status-pill" data-status="archived">Archived</span>
+            </div>
+            <p class="work-desc">Archived status uses a neutral gray. For retired projects that remain referenceable but aren&rsquo;t active.</p>
+            <div class="tech-list">Legacy · Internal</div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Writing row states -->
+      <section aria-labelledby="ds-writing-heading">
+        <h2 id="ds-writing-heading">Writing row states</h2>
+        <ul class="writing-list">
+          <li>
+            <a href="#" class="writing-item" data-state="published" onclick="event.preventDefault()">
+              <span class="writing-title">Published row — full opacity, arrow, pointer, hover underline</span>
+              <span class="writing-tag">philosophy</span>
+              <span class="writing-arrow" aria-hidden="true">&rarr;</span>
+            </a>
+          </li>
+          <li>
+            <div class="writing-item" data-state="coming-soon" aria-disabled="true">
+              <span class="writing-title">Coming-soon row — 55% opacity, no arrow, default cursor</span>
+              <span class="writing-tag">Coming Soon</span>
+              <span class="writing-arrow" aria-hidden="true"></span>
+            </div>
+          </li>
+          <li>
+            <div class="writing-item" data-state="draft" aria-disabled="true">
+              <span class="writing-title">Draft row — same treatment as coming-soon with DRAFT tag</span>
+              <span class="writing-tag">Draft</span>
+              <span class="writing-arrow" aria-hidden="true"></span>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Chips -->
+      <section aria-labelledby="ds-chips-heading">
+        <h2 id="ds-chips-heading">Chips &amp; tech lists</h2>
+        <div class="chip-row">
+          <span class="chip">Chip one</span>
+          <span class="chip">Chip two</span>
+          <span class="chip">Chip three</span>
+        </div>
+        <div class="tech-list">C++ · Vulkan · GLSL · CMake</div>
+        <p style="color: var(--meta); font-size: var(--fs-small);"><code>.chip</code> uses the same padding/radius tokens as the hero <code>.btn</code>. <code>.tech-list</code> is the single source of truth for project tech-stack styling.</p>
+      </section>
+
+      <!-- Buttons -->
+      <section aria-labelledby="ds-buttons-heading">
+        <h2 id="ds-buttons-heading">Buttons</h2>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="#" onclick="event.preventDefault()">Primary</a>
+          <a class="btn btn-ghost" href="#" onclick="event.preventDefault()">Ghost</a>
+        </div>
+      </section>
+
+      <!-- Footer links -->
+      <section aria-labelledby="ds-footer-heading">
+        <h2 id="ds-footer-heading">Footer links</h2>
+        <nav class="footer-links" aria-label="Footer links example">
+          <a class="footer-link" href="#" onclick="event.preventDefault()">Email</a>
+          <a class="footer-link" href="#" onclick="event.preventDefault()">GitHub</a>
+          <a class="footer-link" href="#" onclick="event.preventDefault()">RSS</a>
+        </nav>
+      </section>
+
+      <!-- Theme toggle -->
+      <section aria-labelledby="ds-theme-heading">
+        <h2 id="ds-theme-heading">Theme toggle</h2>
+        <p style="color: var(--muted);">The toggle is in the top-right of this page. Click it to switch between dark and light; your choice is persisted in <code>localStorage</code>. First-load respects <code>prefers-color-scheme</code>. <code>aria-label</code> reflects the target mode.</p>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        var toggle = document.querySelector('.theme-toggle');
+        var html = document.documentElement;
+        function applyTheme(theme) {
+          if (theme === 'light') html.setAttribute('data-theme', 'light');
+          else html.removeAttribute('data-theme');
+          toggle.setAttribute('aria-label',
+            theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        }
+        var initial = html.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+        applyTheme(initial);
+        toggle.addEventListener('click', function () {
+          var current = html.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+          var next = current === 'light' ? 'dark' : 'light';
+          applyTheme(next);
+          localStorage.setItem('theme', next);
+        });
+      })();
+    </script>
+  </body>
+</html>
