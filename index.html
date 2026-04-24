@@ -13,9 +13,16 @@
     <meta property="og:description" content="Building distributed systems, graphics engines, and occasionally writing Latin poetry." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://danielcazares.com" />
+    <meta property="og:image" content="https://danielcazares.com/og-image.png" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Daniel Cazares — Software Engineer" />
+    <meta name="twitter:description" content="Building distributed systems, graphics engines, and occasionally writing Latin poetry." />
+    <meta name="twitter:image" content="https://danielcazares.com/og-image.png" />
 
     <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>D</text></svg>" />
+    <link rel="icon" href="/favicon.svg" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -135,7 +142,7 @@
         --meta: #746857;
 
         --accent: #c6502f;
-        --accent-muted: #a0695a;
+        --accent-muted: #935e50;
         --accent-2: #1f6f80;
 
         --accent-tint: rgba(198, 80, 47, 0.10);
@@ -985,8 +992,7 @@
       <button
         class="theme-toggle"
         type="button"
-        aria-label="Toggle color theme"
-        aria-pressed="true"
+        aria-label="Switch to light mode"
         title="Toggle theme"
       >
         <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1177,12 +1183,12 @@
           } else {
             html.removeAttribute('data-theme');
           }
-          toggle.setAttribute('aria-pressed', theme === 'light' ? 'false' : 'true');
+          toggle.setAttribute('aria-label',
+            theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
         }
 
-        // Sync aria-pressed with the pre-applied theme from the head script
-        const initial = html.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-        toggle.setAttribute('aria-pressed', initial === 'light' ? 'false' : 'true');
+        var initial = html.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+        applyTheme(initial);
 
         toggle.addEventListener('click', function () {
           const current = html.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
