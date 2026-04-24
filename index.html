@@ -716,12 +716,14 @@
         border-radius: var(--radius-sm);
       }
 
-      .writing-item.coming-soon {
-        opacity: 0.5;
-        cursor: not-allowed;
+      .writing-item[data-state="coming-soon"],
+      .writing-item[data-state="draft"] {
+        opacity: 0.55;
+        cursor: default;
       }
-      .writing-item.coming-soon .writing-tag {
-        font-style: italic;
+      .writing-item[data-state="coming-soon"] .writing-arrow,
+      .writing-item[data-state="draft"] .writing-arrow {
+        display: none;
       }
 
       /* ============================================================
@@ -1008,44 +1010,44 @@
         <h2 id="writing-heading">Writing &amp; Creative</h2>
         <ul class="writing-list">
           <li>
-            <a href="/architecture.html" class="writing-item">
+            <a href="/architecture.html" class="writing-item" data-state="published">
               <span class="writing-title">Invariant-First Architecture</span>
               <span class="writing-tag">philosophy</span>
               <span class="writing-arrow" aria-hidden="true">→</span>
             </a>
           </li>
           <li>
-            <a href="/ifa-spec.html" class="writing-item">
+            <a href="/ifa-spec.html" class="writing-item" data-state="published">
               <span class="writing-title">IFA Specification</span>
               <span class="writing-tag">spec</span>
               <span class="writing-arrow" aria-hidden="true">→</span>
             </a>
           </li>
           <li>
-            <a href="/llm-learnings.html" class="writing-item">
+            <a href="/llm-learnings.html" class="writing-item" data-state="published">
               <span class="writing-title">LLM Learnings</span>
               <span class="writing-tag">notes</span>
               <span class="writing-arrow" aria-hidden="true">→</span>
             </a>
           </li>
           <li>
-            <div class="writing-item coming-soon" aria-disabled="true">
+            <div class="writing-item" data-state="coming-soon" aria-disabled="true">
               <span class="writing-title">On the Vulkan Port: A Post-Mortem</span>
-              <span class="writing-tag">coming soon</span>
+              <span class="writing-tag">Coming Soon</span>
               <span class="writing-arrow" aria-hidden="true"></span>
             </div>
           </li>
           <li>
-            <div class="writing-item coming-soon" aria-disabled="true">
+            <div class="writing-item" data-state="coming-soon" aria-disabled="true">
               <span class="writing-title">Mathematical Noir</span>
-              <span class="writing-tag">fiction</span>
+              <span class="writing-tag">Coming Soon</span>
               <span class="writing-arrow" aria-hidden="true"></span>
             </div>
           </li>
           <li>
-            <div class="writing-item coming-soon" aria-disabled="true">
+            <div class="writing-item" data-state="coming-soon" aria-disabled="true">
               <span class="writing-title">Programming Philosophy in Latin</span>
-              <span class="writing-tag">manifesto</span>
+              <span class="writing-tag">Coming Soon</span>
               <span class="writing-arrow" aria-hidden="true"></span>
             </div>
           </li>
