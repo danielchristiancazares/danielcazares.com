@@ -759,6 +759,22 @@
       }
 
       /* ============================================================
+         MUSIC EMBED — collapse when empty
+         ============================================================ */
+      .music-embed:empty {
+        display: none;
+      }
+      .music-embed {
+        border-radius: var(--radius-md);
+        overflow: hidden;
+      }
+      .music-embed iframe {
+        width: 100%;
+        border: none;
+        display: block;
+      }
+
+      /* ============================================================
          CHIPS — Music, Interests (shared tokens with .btn)
          ============================================================ */
       .chip-row,
@@ -1125,6 +1141,7 @@
           <span class="chip">Ableton</span>
           <span class="chip">Suno</span>
         </div>
+        <div class="music-embed"></div>
       </section>
 
       <section aria-labelledby="interests-heading">
