@@ -355,6 +355,9 @@
         grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
         gap: var(--space-8);
         align-items: stretch;
+        position: relative;
+        min-height: calc(93vh - 262px);
+        padding-bottom: var(--space-16);
       }
 
       .hero-left {
@@ -479,6 +482,40 @@
         font-weight: 600;
         letter-spacing: 0.02em;
         color: var(--accent);
+      }
+
+      /* Scroll affordance at hero bottom */
+      .scroll-cue {
+        position: absolute;
+        bottom: var(--space-4);
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-2);
+        color: var(--meta);
+        font-size: var(--fs-xsmall);
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        text-decoration: none;
+        animation: cue-in 0.6s ease 0.5s both;
+        transition: color 0.2s ease;
+      }
+      .scroll-cue:hover { color: var(--accent); }
+      .scroll-cue-chevron {
+        width: 18px;
+        height: 18px;
+        animation: bob 2s ease-in-out infinite;
+      }
+      @keyframes cue-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes bob {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(5px); }
       }
 
       /* ============================================================
@@ -878,6 +915,10 @@
           </p>
           <div class="status-cta">Open to contracts</div>
         </aside>
+        <a href="#work-heading" class="scroll-cue" aria-label="Scroll to Selected Work">
+          <span>Selected Work</span>
+          <svg class="scroll-cue-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </a>
       </header>
 
       <section aria-labelledby="work-heading">
