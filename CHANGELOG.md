@@ -57,23 +57,44 @@
   states, chips, buttons, footer links, and the theme toggle in both
   modes. `noindex` meta so it stays out of search results.
 
-### Lighthouse
-_Baseline captured via `PerformanceObserver` against the local
-`python3 -m http.server` (WSL eth0 to Windows Chrome):_
+### Perf snapshot (before / after)
 
-| Metric | Baseline | After |
+_Captured via `PerformanceObserver` + raw file bytes against a local
+`python3 -m http.server` loaded in Chrome. Chrome for Linux is not
+installed in this sandbox, so **official Lighthouse scores
+(Performance / Accessibility / Best Practices / SEO) were not run**.
+For those, open `http://localhost:8765/` in DevTools → Lighthouse, or
+run `npx lighthouse http://localhost:8765/ --preset=desktop` on a
+machine with Chrome installed._
+
+**Byte sizes (authoritative, cache-independent):**
+
+| Asset | Before | After | Δ |
+|---|---|---|---|
+| `index.html` | 37.4 KB | 40.6 KB | +3.3 KB (+8.7%) |
+| `spacecraft.webp` | — | 21.8 KB | new |
+| `blackhole.webp` | — | 26.9 KB | new |
+| `healthcare.webp` | — | 24.7 KB | new |
+| **Total served** | 37.4 KB | 114.0 KB | +76.7 KB |
+| **Initial viewport (with lazy-loading)** | 37.4 KB | ~62.4 KB | +25 KB |
+| DOM elements | 122 | 145 | +23 |
+
+Source PNGs (`spacecraft.png`, `blackhole.png`, `healthcare.png`) total
+~5.2 MB on disk; the WebPs are a **~98.5% reduction** at visually
+indistinguishable quality (85). Two of the three card images are below
+the fold and carry `loading="lazy"` so they don't count against initial
+load.
+
+**Timing metrics (indicative only — Google Fonts caching between runs
+skews the comparison; treat as "not regressed", not as absolute
+numbers):**
+
+| Metric | Baseline (cold) | After (warm, partial cache) |
 |---|---|---|
-| First Contentful Paint | 488 ms | _see c11_ |
-| Largest Contentful Paint | 540 ms (`H1.wordmark`) | _see c11_ |
-| DOMContentLoaded | 461 ms | _see c11_ |
-| Load event | 684 ms | _see c11_ |
-| Resource count | 1 | _see c11_ |
-| Transfer size | 1 KB | _see c11_ |
-| DOM elements | 122 | _see c11_ |
+| Time to First Byte | 5 ms | 5 ms |
+| First Contentful Paint | 488 ms | 60 ms* |
+| Largest Contentful Paint | 540 ms (`H1.wordmark`) | 60 ms (`P.lead`)* |
+| DOMContentLoaded | 461 ms | 14 ms* |
+| Load event | 684 ms | 31 ms* |
 
-_Official Lighthouse scores (Performance / Accessibility / Best Practices
-/ SEO) pending — Chrome for Linux not installed in this sandbox. Run
-`npx lighthouse http://localhost:8765/ --preset=desktop --output=html
---output-path=./lh-after.html` from a Linux machine with Chrome, or
-open `http://localhost:8765/` in DevTools → Lighthouse, for the
-official numbers._
+<sub>*warm-cache artifact; Google Fonts were cached between runs.</sub>
