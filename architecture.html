@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Invariant-First Architecture - Daniel Cazares</title>
-    <meta name="description" content="Make invalid states unrepresentable. A guide to designing types where invalid states cannot mathematically exist." />
+    <title>Type-Driven Design in Rust - Daniel Cazares</title>
+    <meta name="description" content="Authoritative repository design contract for type-driven, invariant-first Rust. Make invalid states unrepresentable by construction." />
     <meta name="author" content="Daniel Cazares" />
 
     <!-- Open Graph -->
-    <meta property="og:title" content="Invariant-First Architecture - Daniel Cazares" />
-    <meta property="og:description" content="Make invalid states unrepresentable. A guide to designing types where invalid states cannot mathematically exist." />
+    <meta property="og:title" content="Type-Driven Design in Rust - Daniel Cazares" />
+    <meta property="og:description" content="Authoritative repository design contract for type-driven, invariant-first Rust. Make invalid states unrepresentable by construction." />
     <meta property="og:type" content="article" />
     <meta property="og:url" content="https://danielcazares.com/architecture.html" />
 
@@ -206,6 +206,17 @@
         color: var(--muted);
         margin-bottom: 40px;
         font-style: italic;
+      }
+
+      .doc-meta {
+        font-size: 0.9rem;
+        color: var(--muted);
+        margin-bottom: 32px;
+        line-height: 1.6;
+      }
+
+      .doc-meta strong {
+        color: var(--ink);
       }
 
       h2 {
@@ -480,325 +491,488 @@
       </a>
 
       <article>
-        <h1>Invariant-First Architecture</h1>
-        <p class="subtitle">Absorb the principle, not the syntax. For the complete specification, see <a href="/ifa-spec.html">the full spec</a>.</p>
+        <h1>Type-Driven Design in Rust</h1>
+        <p class="subtitle">Authoritative repository design contract for type-driven, invariant-first Rust in Hauberk.</p>
 
-        <h2>How to Read This Document</h2>
-        <p>The examples exist to illustrate structural concepts, not to be copied outright. The principle behind every pattern is <strong>Correctness by Construction</strong>. If you understand this, you can derive the correct implementation for any situation. If you are looking for escape hatches in the examples, you are missing the point.</p>
-
-        <h2>The Core Idea</h2>
-        <div class="highlight-box">
-          <p><strong>Make invalid states unrepresentable.</strong></p>
+        <div class="doc-meta">
+          <strong>Date:</strong> 2026-04-17<br />
+          <strong>Related Documents:</strong> <code>IFA_CONFORMANCE_RULES.md</code>, <code>INVARIANT_FIRST_ARCHITECTURE.md</code>, <code>../AGENTS.md</code>
         </div>
-        <p>Design types so that invalid states cannot exist. Rely on types alone, not programmer discipline, runtime checks, or documentation.</p>
-        <p>If invalid code compiles, the type definitions do not accurately reflect the domain. Successful compilation must be sufficient proof of structural validity.</p>
 
-        <hr />
-
-        <h2>Typestate: The ShuffledDeck Pattern</h2>
-        <h3>The Problem</h3>
-        <p>Temporal coupling hidden in side effects.</p>
-        <p>Games require a shuffled deck. A <code>Deck</code> object that <em>might</em> be shuffled is a lie. Nothing prevents <code>startGame(unshuffledDeck)</code>.</p>
-
-        <h3>The Semantic Fix</h3>
-        <p>The <code>shuffle</code> function is a <strong>transition</strong>. It consumes the precursor state and emits the valid state.</p>
-
-<pre><code>class Deck { ... }; // Represents a raw deck
-
-class ShuffledDeck {
-    friend ShuffledDeck shuffle(Deck&&); // Consumption
-    ShuffledDeck() = default;
-};
-
-// The Transition: Consumes 'Deck', proves 'ShuffledDeck' exists
-[[nodiscard]] ShuffledDeck shuffle(Deck&& d);
-
-// The Consumer: Physically impossible to call without the proof
-void startGame(ShuffledDeck d);</code></pre>
-
-        <h3>The Reality</h3>
-        <p><code>Deck</code> and <code>ShuffledDeck</code> are different types with different capabilities. Move semantics prevent "use-after-transition," ensuring the timeline allows no forks.</p>
-        <p><strong>The Return Type is the Proof of History.</strong></p>
-
-        <hr />
-
-        <h2>Parametricity (Enforced Agnosticism)</h2>
-        <h3>The Problem</h3>
-        <p>Inspection breeds coupling.</p>
-        <p>A function taking <code>const vector&lt;Card&gt;&amp;</code> has too much power. It can inspect cards, log values, or branch logic based on specific suits.</p>
-
-        <h3>The Semantic Fix</h3>
-        <p>Polymorphism enforces structural blindness.</p>
-
-<pre><code>template &lt;typename T&gt;
-T get_first(const std::vector&lt;T&gt;& list);</code></pre>
-
-        <h3>The Semantic Guarantee</h3>
-        <p>By quantifying over <code>T</code>, we strip the implementation of the ability to inspect the data. The signature <code>forall A. [A] -&gt; A</code> constrains the implementation to pure data movement. It operates on the structure of the container, never the nature of the content.</p>
-        <p><strong>The constraint forces the correct implementation to be the path of least resistance.</strong></p>
-
-        <hr />
-
-        <h2>Constrained Generics (Call-Site Rejection)</h2>
-        <p>Parametricity blinds the implementation (what it can do). Constraints filter the call site (what it accepts).</p>
-
-<pre><code>// Unconstrained: Accepts garbage, fails deep inside logic
-template &lt;typename T&gt;
-void serialize(const T& obj);
-
-// Constrained: Rejects garbage at the boundary
-template &lt;typename T&gt;
-    requires Serializable&lt;T&gt;
-void serialize(const T& obj);</code></pre>
-
-        <p>SFINAE (and Concepts) moves the rejection from inside the template instantiation to the signature. The function literally does not exist for types that cannot satisfy it.</p>
-        <p><strong>The Boundary Principle:</strong> Invalid instantiations must not propagate past the signature.</p>
-
-        <hr />
-
-        <h2>The Shared Foundation</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Pattern</th>
-              <th>The Semantic Guarantee</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Typestate</td>
-              <td>Proof of History. (<code>B</code> cannot exist unless <code>A</code> happened first).</td>
-            </tr>
-            <tr>
-              <td>Parametricity</td>
-              <td>Implementation Agnosticism. (Logic cannot depend on data values).</td>
-            </tr>
-            <tr>
-              <td>Constraints</td>
-              <td>Call-Site Rejection. (Invalid inputs are structurally incompatible).</td>
-            </tr>
-            <tr>
-              <td>Move Semantics</td>
-              <td>Linearity. (Resource is at exactly one place at one time).</td>
-            </tr>
-            <tr>
-              <td>State as Location</td>
-              <td>Synchronization. (Flag and map cannot disagree).</td>
-            </tr>
-            <tr>
-              <td>Capability Tokens</td>
-              <td>Phase Validity. (Code cannot run outside its time slot).</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <hr />
-
-        <h2>Ownership is Coordination</h2>
+        <h2>0. Reading Rule</h2>
         <div class="highlight-box">
-          <p><strong>Make coordination unnecessary by making ownership complete.</strong></p>
+          <p><strong>Read for invariants, not syntax.</strong> Examples illustrate the rule; they are not templates to copy mechanically.</p>
         </div>
-        <p>If two pieces of code must "agree" on the state of a resource, the architecture is flawed. One object should own the resource.</p>
-        <ul>
-          <li><strong>Fragmented Ownership:</strong> Function takes an ID and a pointer, tries to fill the pointer. Caller owns memory, Callee owns logic. Result: Boolean return codes and undefined states.</li>
-          <li><strong>Complete Ownership:</strong> Function takes an ID, returns a fully constructed object or a boundary error. The core never receives a "maybe."</li>
-        </ul>
-
-        <h3>Corollary: The Retry Fallacy</h3>
-        <p>Retry loops inside the core are consensus failures: logic attempting to synchronize with itself. If you have to ask "did that work?" and try again, two components have different views of reality. Fix the ownership scope so disagreement is impossible.</p>
-        <p>Retries belong at the boundary. Retries inside the core indicate architecture rot.</p>
+        <p>This contract is stricter than raw Rust semantics. If Rust permits a construct that this document forbids, this document wins. Enforce the contract mechanically with CI linting, architectural tests, and <code>#![deny(unsafe_code)]</code> at the crate level.</p>
+        <p>If core logic requires <code>.unwrap()</code>, <code>.expect()</code>, <code>.clone()</code>, <code>unsafe</code>, <code>Arc&lt;Mutex&lt;T&gt;&gt;</code>, or <code>Rc&lt;RefCell&lt;T&gt;&gt;</code> to make the model workable, the invariant or ownership model is wrong.</p>
 
         <hr />
 
-        <h2>Data Providers Don't Decide (Mechanism vs. Policy)</h2>
-        <p><strong>Providers expose Mechanism (facts); Callers decide Policy (actions).</strong></p>
-        <p>When a data provider returns a fallback value (e.g., a default texture) because an ID was missing, it is usurping the caller's agency.</p>
-        <ul>
-          <li><strong>Wrong:</strong> <code>TextureManager::get(id)</code> returns a default texture. The Manager decides "The game must go on."</li>
-          <li><strong>Right:</strong> <code>TextureManager::available()</code> returns a read-only view of what exists. The Caller decides "I need this texture; if missing, I will trigger a loading screen."</li>
-        </ul>
-        <p>The texture manager herds cats to food. It makes textures available. It doesn't need to know if each cat is hungry. Cats (callers) can see what's available and decide for themselves.</p>
-        <p><strong>Semantic Rule:</strong> If a function returns "Fallback OR Real Data" without the type system distinguishing them, you have hidden a decision inside a data access.</p>
+        <h2>I. Core Contract</h2>
+        <div class="highlight-box">
+          <p><strong>Invalid states MUST be unrepresentable.</strong></p>
+        </div>
+        <p>Types MUST make invalid states impossible to construct or impossible to pass across internal boundaries. Core logic MUST NOT rely on discipline, runtime checks, comments, or documentation to preserve invariants.</p>
+        <p>If an invalid domain state can exist after compilation, the type design is wrong. Compilation MUST be evidence of structural integrity, not mere syntax validity.</p>
 
         <hr />
 
-        <h2>State as Location</h2>
+        <h2>II. Definitions</h2>
+        <ul>
+          <li><strong>Repo-defined surface</strong> &mdash; any type or signature declared in this repository, including struct fields, enum payloads, type aliases, config DTOs, persisted-state models, function parameters, and return types.</li>
+          <li><strong>Boundary</strong> &mdash; the immediate deserialization layer, FFI adapter, or external API handler that first receives foreign data.</li>
+          <li><strong>Core logic</strong> &mdash; internal business/domain logic after boundary translation.</li>
+          <li><strong>Strict-surface API</strong> &mdash; an API outside explicitly named runtime-shell or compatibility-quarantine modules.</li>
+        </ul>
+        <p>The key words <strong>MUST</strong>, <strong>MUST NOT</strong>, <strong>REQUIRED</strong>, <strong>SHOULD</strong>, <strong>SHOULD NOT</strong>, and <strong>MAY</strong> are to be interpreted as defined by BCP 14 (RFC 2119 and RFC 8174) when, and only when, shown in all caps.</p>
+
+        <hr />
+
+        <h2>III. Absolute Modeling Rules</h2>
+
+        <h3>A. No Optionality in Repo-Defined Types</h3>
+        <p>Repo-defined surfaces MUST NOT contain <code>Option&lt;T&gt;</code>, including nested forms such as <code>Vec&lt;Option&lt;T&gt;&gt;</code> or <code>HashMap&lt;K, Option&lt;V&gt;&gt;</code>.</p>
+        <p>Repo-defined types MUST NOT replace <code>Option&lt;T&gt;</code> with pseudo-optional wrappers such as <code>Absent | Present(T)</code>, <code>Missing | Value(T)</code>, <code>Unknown | Known(T)</code>, or any equivalent variant pair where one branch means only "no value".</p>
+        <p>If data can be absent, the model is wrong. Fix it by one of the following:</p>
+        <ol>
+          <li>split the model into distinct inhabited types,</li>
+          <li>use typestate, or</li>
+          <li>introduce a genuine domain mode whose variants name behavior, not absence.</li>
+        </ol>
+        <p>Mere absence MUST NOT be modeled as a variant. Use explicit operational modes instead of presence wrappers:</p>
+
+<pre><code>pub struct FeatureConfig;
+
+pub enum FeatureMode {
+    OfflineOnly,
+    ProviderBacked(FeatureConfig),
+}</code></pre>
+
+        <p><code>OfflineOnly</code> is allowed because it names behavior. <code>Absent</code> is forbidden because it names missing data.</p>
+
+        <h3>B. No Bare Booleans</h3>
+        <p>Repo-defined surfaces MUST NOT contain <code>bool</code>, including nested forms such as <code>Vec&lt;bool&gt;</code> or <code>HashMap&lt;K, bool&gt;</code>.</p>
+        <p>Every boolean distinction stored or passed MUST be named with a two-variant enum, typestate, capability token, or split inhabited types. <code>true</code> and <code>false</code> are storage encodings, not domain language.</p>
+
+        <h3>C. No Wildcard Bypass Variants</h3>
+        <p>Repo-defined config and permission ADTs MUST NOT define wildcard variants such as <code>Any</code>, <code>All</code>, <code>Unrestricted</code>, or <code>AllowAll</code>.</p>
+        <p>Use finite policy lattices with explicit merge functions instead:</p>
+
+<pre><code>#[derive(Clone, Copy, PartialEq, Eq)]
+enum ApprovalMode {
+    Strict,
+    Balanced,
+    Permissive,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ApprovalModeCeiling {
+    Strict,
+    Balanced,
+    Permissive,
+}
+
+fn enforce_ceiling(requested: ApprovalMode, ceiling: ApprovalModeCeiling) -&gt; ApprovalMode {
+    match (requested, ceiling) {
+        (_, ApprovalModeCeiling::Strict) =&gt; ApprovalMode::Strict,
+        (ApprovalMode::Permissive, ApprovalModeCeiling::Balanced) =&gt; ApprovalMode::Balanced,
+        (mode, ApprovalModeCeiling::Permissive) =&gt; mode,
+        (mode, ApprovalModeCeiling::Balanced) =&gt; mode,
+    }
+}</code></pre>
+
+        <p>Boundary absence is permitted only transiently, but it MUST collapse into an inhabited requirement value before any repo-defined value is constructed.</p>
+
+        <h3>D. <code>Result</code> Is Control Flow, Not Domain State</h3>
+        <p>Returning <code>Result&lt;T, E&gt;</code> from fallible operations is permitted. It MUST NOT be stored in domain state or other repo-defined data types.</p>
+        <p><code>Result&lt;T, ()&gt;</code> and <code>Result&lt;T, NotFound&gt;</code> MUST NOT be used as backdoors for optionality.</p>
+
+        <h3>E. External Primitives Are Boundary-Local Only</h3>
+        <p>External <code>Option</code> and <code>bool</code> MUST NOT be stored, forwarded, or bound to named locals in core logic. Collapse them immediately in the exact boundary function that receives them, either:</p>
+        <ul>
+          <li>inline in a <code>match</code>, or</li>
+          <li>inside <code>TryFrom</code>, <code>Deserialize</code>, or equivalent boundary conversion code.</li>
+        </ul>
+        <p>Do not assign an external <code>Option</code> to a <code>let</code> and juggle it across later lines. Do not forward raw optionality or booleans through helper layers.</p>
+
+        <hr />
+
+        <h2>IV. Naming Rules</h2>
+        <p>Repo-defined enums MUST use consequence-first names. A variant name MUST describe either:</p>
+        <ul>
+          <li>the downstream operational consequence, or</li>
+          <li>the definitive domain fact established by that variant.</li>
+        </ul>
+        <p>Repo-defined enums MUST NOT use generic lifecycle or container labels such as <code>Ready</code>, <code>Unavailable</code>, <code>Present</code>, <code>Missing</code>, <code>Connected</code>, <code>Disconnected</code>, <code>Reported</code>, or <code>NotReported</code>.</p>
+        <p>Variant names MUST NOT describe the upstream process that produced the state. They MUST describe what the system now knows or what the system must now do.</p>
+        <p>If a downstream consumer must inspect the constructor or origin function to understand how to behave, the name has failed. The compiler enforces structure; naming MUST enforce semantics.</p>
+        <p>When a variant encodes a restriction, fallback, or denial, the name MUST describe the exact resulting perimeter or behavior. Use <code>HostIsolated</code> rather than <code>Sandboxed</code>; use <code>FollowPlatformDefault</code> rather than <code>Absent</code>.</p>
+
+        <hr />
+
+        <h2>V. Typestate, ADTs, and State as Location</h2>
+
+        <h3>A. Typestate</h3>
+        <p>Use typestate to model phase transitions. Distinct phases MUST be distinct types to the compiler. Transitions MUST consume the prior state and return the next state.</p>
+
+<pre><code>pub struct ShuffledDeck {
+    top: Card,
+    rest: Vec&lt;Card&gt;,
+    _proof: (),
+}
+
+pub enum DrawOutcome {
+    CardDrawn { card: Card, remaining: ShuffledDeck },
+    FinalCardDrawn { card: Card },
+}
+
+impl ShuffledDeck {
+    pub fn new() -&gt; Self { /* constructs a valid shuffled deck */ }
+
+    #[must_use]
+    pub fn draw(self) -&gt; DrawOutcome { /* consumes deck */ }
+}
+
+pub fn start_game(deck: ShuffledDeck) { /* ... */ }</code></pre>
+
+        <p><code>ShuffledDeck</code> exists; an unshuffled game deck does not. <code>draw(self)</code> consumes the deck. The internal <code>Option</code> from <code>Vec::pop</code> stays boundary-local inside the method; it does not appear in any repo-defined type.</p>
+        <p>Typestate structs and capability tokens MUST NOT derive <code>Copy</code> or <code>Clone</code>. Duplication defeats move semantics and reopens states that were supposed to be consumed.</p>
+
+        <h3>B. Parametric Typestate</h3>
+        <p>When multiple states share one data layout, a sealed marker parameter MUST be used.</p>
+
+<pre><code>mod state {
+    pub trait ConfigPhase: private::Sealed {}
+    mod private { pub trait Sealed {} }
+
+    pub struct Draft;
+    pub struct Validated;
+
+    impl private::Sealed for Draft {}
+    impl private::Sealed for Validated {}
+    impl ConfigPhase for Draft {}
+    impl ConfigPhase for Validated {}
+}
+
+pub struct AppConfig&lt;S: state::ConfigPhase&gt; {
+    id: NonEmptyString,
+    payload: NonEmptyString,
+    _phase: std::marker::PhantomData&lt;S&gt;,
+}</code></pre>
+
+        <p>When states share layout, this pattern MUST be used. When states require different fields, separate structs MUST be used. Do not reintroduce <code>Option</code> to fake a shared layout.</p>
+
+        <h3>C. Use Sum Types for Exclusive States</h3>
+        <p>Product types multiply state space. Sum types add it. Multiplication MUST NOT be used when the domain requires exclusive alternatives.</p>
+        <p>Invalid:</p>
+
+<pre><code>struct Connection {
+    state: ConnectionState,
+    socket: Option&lt;TcpStream&gt;,
+}</code></pre>
+
+        <p>Valid:</p>
+
+<pre><code>pub enum TransportSession {
+    NetworkUnavailable,
+    EstablishedStream(TcpStream),
+}</code></pre>
+
+        <h3>D. State as Location</h3>
         <div class="highlight-box">
           <p><strong>Existence is state.</strong></p>
         </div>
-        <p>Track lifecycle through container membership, not <code>enum State</code> or <code>bool is_active</code>. An object's state is defined by where it is.</p>
+        <p>Collections MUST NOT carry lifecycle state through status flags. Location is the state.</p>
+        <p>Use distinct locations such as <code>pending_uploads: Vec&lt;PendingAsset&gt;</code> and <code>resident_textures: Vec&lt;ResidentAsset&gt;</code>. Transitions MUST consume from one location and produce into another. Presence in the destination location is the proof.</p>
+
+        <h3>E. Iterator Style</h3>
+        <p>Iterator combinators MUST be used instead of imperative <code>for</code> loops with mutable accumulation. Combinators make transformation stages explicit and keep the <code>Option</code> from <code>Iterator::next()</code> inside iterator machinery.</p>
+
+        <h3>F. Uninhabited Error Types</h3>
+        <p>When a fallible API surface is known to be infallible at a particular typestate &mdash; for instance, a parse that has already been validated &mdash; the error type MUST be <code>!</code> or an uninhabited enum such as <code>std::convert::Infallible</code>, not a populated error whose variants are documented as unreachable.</p>
+        <p>With <code>min_exhaustive_patterns</code> stabilized, match arms for impossible cases can and MUST be omitted. Their presence indicates the type is lying about what can happen.</p>
+
+        <hr />
+
+        <h2>VI. Parametricity and Trait Bounds</h2>
+        <p>Use unconstrained generics when a function MUST remain blind to the element type.</p>
+
+<pre><code>fn get_first&lt;T&gt;(list: &amp;NonEmptyList&lt;T&gt;) -&gt; &amp;T {
+    list.first()
+}</code></pre>
+
+        <p>With no trait bounds, the implementation cannot branch on <code>T</code>, inspect <code>T</code>, or call type-specific methods on <code>T</code>. It is forced to operate only on container structure.</p>
+        <p>Add trait bounds only for capabilities the function actually requires.</p>
+
+<pre><code>fn render_blind&lt;T&gt;(_value: &amp;T) {}
+fn render&lt;T: Display&gt;(value: &amp;T) -&gt; String { value.to_string() }</code></pre>
+
+        <p>Trait bounds are call-site rejection. The function does not exist for types that do not satisfy the bound.</p>
+
+        <hr />
+
+        <h2>VII. Ownership Is Coordination</h2>
+        <div class="highlight-box">
+          <p><strong>One component MUST own each mutable resource.</strong> If two components must "agree" on the state of a resource, the architecture MUST be rewritten.</p>
+        </div>
+        <p>Ownership hierarchy is the coordination mechanism. Other components borrow or communicate with the owner; they do not co-own domain truth.</p>
+        <p><code>Arc&lt;Mutex&lt;T&gt;&gt;</code>, <code>Arc&lt;RwLock&lt;T&gt;&gt;</code>, <code>Rc&lt;RefCell&lt;T&gt;&gt;</code>, <code>Mutex&lt;T&gt;</code>, and <code>RwLock&lt;T&gt;</code> are strong signals that ownership was not drawn correctly. Core domain state MUST be rewritten into one owner plus borrowed views or typed handles.</p>
+        <p>Retry loops inside core logic indicate a consensus failure: the system is trying to synchronize with itself. Boundary retries adapt to external unreliability. Internal retries indicate broken ownership.</p>
+
+        <h3>A. Async Spawn Boundaries</h3>
+        <p>A spawned task is an ownership boundary. Cross-task mutation MUST be modeled as transferred ownership or typed coordination handles, not <code>&amp;mut</code> borrows.</p>
+        <p>Core domain state, policy state, authority state, typestate carriers, proof-bearing values, and business invariants MUST NOT be shared across spawned tasks through <code>Arc&lt;Mutex&lt;_&gt;&gt;</code>, <code>Arc&lt;RwLock&lt;_&gt;&gt;</code>, <code>Mutex&lt;_&gt;</code>, <code>RwLock&lt;_&gt;</code>, or equivalent wrappers.</p>
+        <p>When multiple async tasks need to affect the same mutable value and any participating path may <code>.await</code>, exactly one task MUST own that value. Other tasks MUST communicate with that owner through typed handles.</p>
+        <p>Typed coordination handles MUST use:</p>
         <ul>
-          <li><strong>Wrong:</strong> A list of objects with status flags (<code>Pending</code>, <code>Resident</code>). You must filter the list to find valid ones.</li>
-          <li><strong>Right:</strong> Two containers: <code>pending_uploads</code> and <code>resident_textures</code>.</li>
+          <li><code>mpsc::Sender&lt;Command&gt;</code> for commands,</li>
+          <li><code>oneshot::Sender&lt;Reply&gt;</code> for per-call replies,</li>
+          <li><code>watch::Receiver&lt;Snapshot&gt;</code> for read-mostly latest state,</li>
+          <li><code>broadcast::Receiver&lt;Event&gt;</code> for event fanout,</li>
+          <li><code>Semaphore</code> permits for capacity or leases,</li>
+          <li><code>JoinSet</code> for task supervision and shutdown.</li>
         </ul>
-        <p>To change state, you move the object from one container to another.</p>
-        <p><strong>Proof:</strong> If an object is in <code>m_resident</code>, it is resident. There is no flag to de-sync.</p>
+        <p>Strict-surface APIs MUST NOT expose shared mutable ownership. They MUST expose handles, commands, snapshots, permits, and join rights.</p>
+        <p>Locks are not state machines. A lock-protected value MUST NOT be the canonical owner of domain truth when an owner task can exist.</p>
+
+        <h3>B. Narrow Exception: Runtime Coordination Cells</h3>
+        <p><code>Arc&lt;Mutex&lt;_&gt;&gt;</code> and <code>Arc&lt;RwLock&lt;_&gt;&gt;</code> are permitted only in explicitly named runtime-shell or compatibility-quarantine modules, and only when <strong>all</strong> of the following hold:</p>
+        <ol>
+          <li>The guarded value is coordination metadata, not domain truth.</li>
+          <li>The guarded value does not encode policy, permission, typestate, phase, or business invariants.</li>
+          <li>No lock is held across <code>.await</code>.</li>
+          <li>The guard never escapes the module.</li>
+          <li>The <code>Arc</code> never appears in a strict-surface API.</li>
+          <li>No nested locking or lock-order graph exists.</li>
+          <li>The cell is replaceable in principle by an owner task and is retained only as a localized runtime convenience.</li>
+        </ol>
+        <p><strong>Permitted:</strong> pending-response maps, cancellation registries, hot cache shards, metrics accumulators, lazily initialized runtime slots.</p>
+        <p><strong>Forbidden:</strong> workflow state, approval policy, capability possession, typestate progression, session authority, or any value whose meaning defines application behavior.</p>
 
         <hr />
 
-        <h2>Capability Tokens</h2>
-        <p><strong>Capability tokens are "Tickets to Ride."</strong></p>
-        <p>If an operation is only valid during a specific phase (e.g., Rendering), require a token that only exists during that phase.</p>
+        <h2>VIII. Providers Expose Mechanism; Callers Decide Policy</h2>
+        <p>Providers MUST expose mechanisms. Callers MUST enforce policies.</p>
+        <p>A provider MUST NOT silently return fallback data when the caller asked for a specific resource. Hidden defaults are policy decisions.</p>
+        <p>If a function can return fallback data or real data, the type system MUST distinguish those outcomes. Otherwise the function has embedded policy inside data access.</p>
+        <p>Loading and reading MUST be separated. Separate loading from proof of residency:</p>
 
-<pre><code>void submitDrawCall(const RenderPass& proof, Mesh m);</code></pre>
+<pre><code>pub struct ResidentTexture&lt;'a&gt;(&amp;'a Texture);
 
-        <p>You do not need <code>assert(is_rendering)</code>. The code physically cannot be called unless you possess a <code>RenderPass</code> object. If the token exists on the stack, the phase is active.</p>
+impl TextureManager {
+    pub fn load(&amp;mut self, id: AssetId) -&gt; Result&lt;(), LoadError&gt;;
+    pub fn get(&amp;self, id: AssetId) -&gt; Result&lt;ResidentTexture&lt;'_&gt;, LookupError&gt;;
+}</code></pre>
+
+        <p><code>load</code> mutates. <code>get</code> proves residency through <code>&amp;self</code>. The provider reports reality; the caller decides what to do with failure.</p>
 
         <hr />
 
-        <h2>Boundaries vs. Internals</h2>
+        <h2>IX. Capability Tokens</h2>
+        <p>Operations valid only within a phase or under a specific authority MUST require a phase-bound or authority-bound token. Use a zero-sized witness type with a private constructor.</p>
+
+<pre><code>pub struct RenderPassToken(());
+
+pub fn submit_draw_call(_permit: &amp;RenderPassToken, mesh: Mesh) {
+    // ...
+}</code></pre>
+
+        <p>Calls MUST require possession of the token. Scope MUST determine which operations are legal.</p>
+
+        <h3>A. Token Naming</h3>
+        <p>Capability tokens MUST be named for the exact authority they grant, not for the subsystem they happen to touch.</p>
+        <p>Use <code>NetworkEgressGrant</code> or <code>SystemExecReadPermit</code> rather than generic nouns such as <code>NetworkClient</code>.</p>
+        <p>When storing token availability, wrap the token in a two-variant enum. The denial variant MUST describe the exact restricted perimeter, not merely a generic absence.</p>
+
+<pre><code>pub struct NetworkEgressGrant { _private: () }
+
+pub enum NetworkEgressPolicy {
+    EgressDenied,
+    EgressPermitted(NetworkEgressGrant),
+}</code></pre>
+
+        <p>The caller MUST pattern-match on the consequence before obtaining the token.</p>
+
+        <h3>B. Token Recovery on Retryable Failure</h3>
+        <p>Capability tokens are affine. They are not duplicable.</p>
+        <p>If an operation consumes a capability token and fails in a retryable way, the failure path MUST return recoverable authority only when absolutely zero side effects occurred.</p>
+        <p>If any side effect occurred, even partial, the token MUST NOT be returned.</p>
+        <p>Recovery outcome types MUST be marked <code>#[must_use]</code>.</p>
+        <p>Do not return a raw token by default. Returning raw authority decouples authority from intent and enables retargeting. Return a suspended continuation that fuses the token with the original operation:</p>
+
+<pre><code>pub struct EgressGrant(());
+pub struct Payload(String);
+
+pub struct SuspendedTransmit {
+    payload: Payload,
+    grant: EgressGrant,
+}
+
+#[must_use]
+pub enum TransmitOutcome {
+    Transmitted,
+    Retryable(SuspendedTransmit),
+    PermanentFailure,
+}
+
+impl SuspendedTransmit {
+    pub fn retry(self) -&gt; TransmitOutcome {
+        transmit_internal(self.payload, self.grant)
+    }
+
+    pub fn abort(self) -&gt; EgressGrant {
+        self.grant
+    }
+}</code></pre>
+
+        <p>On success, permanent failure, or any partial side effect, the token is consumed. <code>SuspendedTransmit</code> MUST NOT derive <code>Clone</code>.</p>
+
+        <hr />
+
+        <h2>X. Boundary Discipline</h2>
         <div class="highlight-box">
           <p><strong>Parse, don't validate.</strong></p>
         </div>
-        <p>A system has a Crust (Boundary) and a Core (Internal).</p>
-        <ul>
-          <li><strong>The Crust:</strong> Accepts messy, optional input. It parses (converts) this into strict Types.</li>
-          <li><strong>The Core:</strong> Operates on strict Types. No <code>optional</code>, no <code>nullptr</code> checking.</li>
-        </ul>
-        <p><strong>The Disease:</strong> Passing <code>std::optional</code> or <code>ptr*</code> deep into the core logic. This forces every internal function to handle the "missing" case, spreading the complexity of the boundary throughout the entire application.</p>
-        <ul>
-          <li><strong>Domain-Optional:</strong> A legitimate absence (e.g., User has no middle name).</li>
-          <li><strong>State-Optional:</strong> A leaky abstraction (e.g., Object exists but <code>init()</code> hasn't been called). Eliminate state-optionality.</li>
-        </ul>
+        <p>Boundaries are the immediate deserialization layer, FFI adapter, and external API handler. Boundaries translate foreign ambiguity into strict internal types.</p>
+        <p><code>Option</code>, <code>bool</code>, parse failures, and foreign schemas MUST be collapsed in the exact boundary function that first receives them. Parsing failures MUST be translated into strict, domain-specific <code>Result</code> values immediately at ingestion.</p>
+        <p>Boundary and core types MUST NOT contain <code>Option&lt;T&gt;</code>, pseudo-optionals, or bare <code>bool</code>. Constructors MUST yield fully valid values.</p>
+        <p>Passing raw optionality or booleans through multiple boundary functions spreads ambiguity. They MUST be eliminated in the first boundary function that touches them.</p>
+        <p>For configuration, explicit operational modes such as <code>OfflineOnly | ProviderBacked(T)</code> MUST be used instead of <code>Option&lt;T&gt;</code> fields or <code>enabled: bool</code>.</p>
+        <p>For policy and authority, finite ordered variants plus total merge rules MUST be used. Wildcard bypass variants and <code>allow_all: bool</code> are forbidden.</p>
+
+        <h3>A. Deserialization Mandate</h3>
+        <p>External formats such as JSON and TOML are inherently loose. That looseness MUST NOT survive parsing.</p>
+        <p><code>#[serde(default)]</code>, <code>#[serde(deserialize_with)]</code>, custom deserializers, or explicit <code>TryFrom</code> conversions MUST be used as needed so that parsing yields fully inhabited, <code>Option</code>-free internal values immediately.</p>
+        <p>If a missing field is invalid and no default is semantically correct, deserialization MUST fail.</p>
+        <p><strong>The domain type is the schema.</strong></p>
 
         <hr />
 
-        <h2>On Assertions</h2>
+        <h2>XI. Module Privacy and Construction Control</h2>
+        <p>If an invariant cannot be expressed in the public type signature alone, construction MUST be restricted by module privacy.</p>
+        <p>Private fields, sealed traits, and smart constructors such as <code>fn new() -&gt; Result&lt;Self, Error&gt;</code> MUST guarantee that downstream code cannot construct invalid values.</p>
+        <p>The <code>_proof: ()</code> pattern is one example. Use any equivalent privacy technique that prevents external construction of invalid states.</p>
+
+        <hr />
+
+        <h2>XII. Assertions and Panic-Based Design</h2>
         <blockquote>
-          <p>"An assertion is an admission: you let the invalid state exist, and now you're calling for backup."</p>
+          <p><code>assert!</code>, <code>debug_assert!</code>, <code>unwrap()</code>, <code>expect()</code>, and <code>unreachable!()</code> do not prevent invalid states. They detect invalid states that the type design already permitted.</p>
         </blockquote>
-        <p>Guards catch invalid states that your types already permitted. If you're writing <code>assert</code>, you've already allowed the invalid state to exist. Encode the constraint in the type instead.</p>
+        <p>In core logic, these are signs that the representation is too weak. Strengthen the representation instead.</p>
 
         <hr />
 
-        <h2>The Death List</h2>
-        <p>When reviewing code, interpret these patterns as structural failures:</p>
-        <table>
-          <thead>
-            <tr>
-              <th>Pattern</th>
-              <th>The Semantic Flaw</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>State-Dependent Validity</td>
-              <td>Fake Sum Type. An enum tag that implies which fields are inhabited is a sum type implemented unsafely. Use distinct types or <code>variant</code>.</td>
-            </tr>
-            <tr>
-              <td>Inhabitant Branching</td>
-              <td>Lying Signature. Checks like <code>if (ptr)</code> deep in logic mean the function requested a <code>T</code> but accepted a <code>Maybe T</code>.</td>
-            </tr>
-            <tr>
-              <td>Sentinel Values</td>
-              <td>In-Band Signaling. <code>-1</code> or <code>""</code> masquerading as valid types.</td>
-            </tr>
-            <tr>
-              <td>Init/Update Methods</td>
-              <td>Step-Coupling. Constructors must complete initialization.</td>
-            </tr>
-            <tr>
-              <td>Retry Loops (in core)</td>
-              <td>Consensus Failure. Logic attempting to synchronize with itself.</td>
-            </tr>
-            <tr>
-              <td>Protective Guards</td>
-              <td>Normalization of Deviance. <code>assert(impossible)</code> protects invalid state from being noticed.</td>
-            </tr>
-            <tr>
-              <td>GetOrDefault</td>
-              <td>Policy Leak. Data provider making decisions for the consumer.</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <hr />
-
-        <h2>The Litmus Test: Memory Layout</h2>
-        <p>Not all enums are bad. Apply the <strong>Memory Layout Test</strong> to distinguish "Behavior" from "State."</p>
-        <ul>
-          <li>
-            <strong>Behavioral Configuration (Valid):</strong> <code>enum AI { Aggressive, Defensive }</code>
-            <ul>
-              <li>Does changing this enum invalidate any member variables? <strong>No.</strong></li>
-              <li>The object structure remains identical; only the algorithm changes.</li>
-            </ul>
-          </li>
-          <li>
-            <strong>Structural State (Invalid):</strong> <code>enum Connection { Disconnected, Connected }</code>
-            <ul>
-              <li>Does changing this enum invalidate <code>m_socketHandle</code>? <strong>Yes.</strong></li>
-              <li>This is a Sum Type masquerading as a Product Type. You are manually managing a relationship the compiler doesn't see.</li>
-            </ul>
-          </li>
-        </ul>
-        <p><strong>Rule:</strong> If the validity of data depends on the value of a flag, that flag must not exist. The data structure itself must change (via <code>variant</code> or move to a new type).</p>
-
-        <hr />
-
-        <h2>Approximations in C++</h2>
-        <p>C++ lacks dependent types, has weak parametricity, and permits escape hatches. We approximate the ideal:</p>
+        <h2>XIII. Rust Approximations</h2>
+        <p>Rust is not dependently typed and provides escape hatches such as <code>unsafe</code> and interior mutability. That does not weaken the contract.</p>
         <table>
           <thead>
             <tr>
               <th>Ideal</th>
-              <th>C++ Approximation</th>
+              <th>Rust Approximation</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td>Typestate</td>
-              <td>Move-only types, private constructors, friend factories.</td>
+              <td>Newtypes plus consuming transitions (<code>fn next(self) -&gt; Next</code>)</td>
             </tr>
             <tr>
-              <td>Linear Types</td>
-              <td><code>= delete</code> copy, move-only, <code>[[nodiscard]]</code>.</td>
+              <td>Linear types</td>
+              <td>Affine ownership, move semantics, <code>#[must_use]</code></td>
             </tr>
             <tr>
               <td>Parametricity</td>
-              <td>Templates with minimal constraints.</td>
+              <td>Generics with minimal trait bounds</td>
             </tr>
             <tr>
-              <td>Bounded Polymorphism</td>
-              <td>SFINAE, <code>requires</code> clauses, Concepts.</td>
+              <td>Bounded polymorphism</td>
+              <td>Trait bounds and <code>where</code> clauses</td>
             </tr>
             <tr>
-              <td>Capability Tokens</td>
-              <td>Structs with private constructors, <code>friend</code> access.</td>
+              <td>Capability tokens</td>
+              <td>Zero-sized witness types with private constructors</td>
             </tr>
             <tr>
-              <td>State as Location</td>
-              <td>Separate containers per state.</td>
+              <td>State as location</td>
+              <td>Separate containers per state, or enums when co-located</td>
+            </tr>
+            <tr>
+              <td>Bottom / never type</td>
+              <td><code>!</code> or <code>std::convert::Infallible</code>; omit impossible match arms under <code>min_exhaustive_patterns</code></td>
+            </tr>
+          </tbody>
+        </table>
+        <p>If Rust cannot forbid an invalid state completely, the interface MUST still make that state difficult to construct and impossible to use accidentally. Imperfect enforcement requires a harder interface, not a weaker one.</p>
+
+        <hr />
+
+        <h2>XIV. Quick Review Test</h2>
+        <p>During review, do not ask, "What happens if someone passes the wrong data?"</p>
+        <div class="highlight-box">
+          <p><strong>Ask, "How do I make passing the wrong data a compile error?"</strong></p>
+        </div>
+        <p>Compile-time friction is cheaper than runtime desynchronization. If the borrow checker resists the design, redesign the architecture.</p>
+
+        <hr />
+
+        <h2>XV. Disallowed Patterns</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Pattern</th>
+              <th>Why It Is Forbidden</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Option&lt;T&gt;</code> fields or pseudo-optional variants</td>
+              <td>Encodes absence instead of a domain fact</td>
+            </tr>
+            <tr>
+              <td>Bare <code>bool</code> fields or parameters</td>
+              <td>Compresses meaning into unlabeled bits</td>
+            </tr>
+            <tr>
+              <td>Wildcard policy variants (<code>Any</code>, <code>All</code>, <code>Unrestricted</code>, <code>AllowAll</code>)</td>
+              <td>Creates a universal escape hatch</td>
+            </tr>
+            <tr>
+              <td>False optionality (<code>Option&lt;T&gt;</code> accepted when <code>T</code> is required)</td>
+              <td>Lies about the contract</td>
+            </tr>
+            <tr>
+              <td>Sentinel values</td>
+              <td>Uses in-band signaling instead of types</td>
+            </tr>
+            <tr>
+              <td>Two-phase initialization</td>
+              <td>Exposes partially initialized state</td>
+            </tr>
+            <tr>
+              <td><code>.unwrap()</code> / <code>expect()</code> / <code>unreachable!()</code> in core logic</td>
+              <td>Replaces type obligations with runtime panic</td>
+            </tr>
+            <tr>
+              <td><code>RefCell</code>-driven design</td>
+              <td>Defers a compile-time ownership problem to runtime</td>
+            </tr>
+            <tr>
+              <td><code>Arc&lt;Mutex&lt;...&gt;&gt;</code> as domain architecture</td>
+              <td>Fragments ownership and creates consensus problems</td>
+            </tr>
+            <tr>
+              <td><code>.clone()</code>-driven design</td>
+              <td>Hides ownership failures instead of fixing them</td>
             </tr>
           </tbody>
         </table>
 
-        <h3>Lock the door anyway.</h3>
-        <p>If you can't eliminate an invalid state, make it awkward to reach.</p>
-        <ul>
-          <li><strong>The Zombie State:</strong> C++ moves are non-destructive (source remains). Use <code>unique_ptr</code> to force emptiness, or destructive <code>consume() &&</code> methods.</li>
-          <li><strong>Explicit Intent:</strong> Use rvalue-qualified methods to force "use-once" semantics where possible.</li>
-        </ul>
-        <p>The language can't enforce it perfectly. Lock the door anyway.</p>
-
         <hr />
 
-        <h2>The Test</h2>
-        <p>When reviewing a design, ask: "How do I make passing the wrong data a compile error?" Define invalid state out of existence rather than detecting it at runtime.</p>
-
-        <hr />
-
-        <h2>Not Acceptable</h2>
-        <p>Objections based on "simplicity" usually conflate ease of writing with simplicity of reasoning.</p>
-        <ul>
-          <li>Writing a global boolean is "easy."</li>
-          <li>Debugging a race condition caused by that boolean is "complex."</li>
-        </ul>
-        <p>We optimize for the latter. The runtime cost of a container move is negligible compared to the cost of debugging a state mismatch that only manifests in production.</p>
-
+        <h2>XVI. Final Standard</h2>
         <div class="section-divider">···</div>
-
-        <p><strong>The goal is a codebase where "It compiles" is a high-confidence statement of structural integrity.</strong></p>
+        <p><strong>The standard is a codebase where compilation is evidence that invalid states, illegal transitions, and unauthorized operations have been designed out of the reachable program.</strong></p>
       </article>
     </main>
 
