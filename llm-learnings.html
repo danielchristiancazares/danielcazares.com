@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LLM Learnings - Daniel Cazares</title>
-    <meta name="description" content="A collection of practical insights for working with large language models effectively." />
+    <title>What I've Learned About LLMs - Daniel Cazares</title>
+    <meta name="description" content="Practical advice for working with large language models." />
     <meta name="author" content="Daniel Cazares" />
 
     <!-- Open Graph -->
-    <meta property="og:title" content="LLM Learnings - Daniel Cazares" />
-    <meta property="og:description" content="A collection of practical insights for working with large language models effectively." />
+    <meta property="og:title" content="What I've Learned About LLMs - Daniel Cazares" />
+    <meta property="og:description" content="Practical advice for working with large language models." />
     <meta property="og:type" content="article" />
     <meta property="og:url" content="https://danielcazares.com/llm-learnings.html" />
 
@@ -449,184 +449,184 @@
       </a>
 
       <article>
-        <h1>LLM Learnings</h1>
-        <p class="subtitle">A collection of practical insights for working with large language models effectively.</p>
+        <h1>What I've Learned About LLMs</h1>
+        <p class="subtitle">Practical advice for working with large language models.</p>
 
-        <h2>Mechanistic Foundations</h2>
+        <h2>How LLMs Generate Responses</h2>
 
-        <h3>Autoregressive Self-Reinforcement</h3>
-        <p>LLMs are autoregressive: each token predicted conditioned on all prior tokens, including its own output. More precisely, a stochastic process that predicts next tokens with emulation of human-like reasoning.</p>
-        <p>Emitted tokens become context. Bad starts compound; good starts compound. Early tokens carry disproportionate weight. Once the model emits a pattern (hedging, verbosity, a flawed reasoning step), those tokens become evidence that "this is the kind of response we're writing" and further output conditions accordingly.</p>
+        <h3>Early Words Shape What Comes Next</h3>
+        <p>Large language models (LLMs) generate text in small pieces called tokens. Each prediction depends on all the text that came before it, including the model's own output. The model uses probabilities to choose the next token and produces text that resembles human reasoning.</p>
+        <p>Every new token becomes part of the context: the text the model uses to generate the rest of its response. Good starts and bad starts tend to build on themselves. Early tokens have an unusually strong influence. If a response starts with cautious language, too much detail, or a mistaken reasoning step, the model tends to continue that pattern.</p>
 
-        <h3>RLHF Shapes Surface Behavior</h3>
-        <p>Hedging, politeness, "epistemic humility": these exist because humans rated them positively during training. Outputs pattern-match to reinforced patterns without intent.</p>
+        <h3>Human Feedback Shapes the Writing Style</h3>
+        <p>During training, people give positive ratings to responses that are polite, cautious, or open about uncertainty. The model learns to repeat those writing patterns automatically.</p>
 
-        <h3>Attention and Positional Effects</h3>
-        <p>Attention weight isn't uniform across context. It operates at three scales.</p>
-        <p><strong>Token order</strong> (within a prompt): Same words in different order produce different attention weights. LLMs encode positional information despite parallel processing.</p>
-        <p><strong>Lost in the middle</strong> (within context window): Attention concentrates at context start and end. Critical information placed mid-context gets deprioritized. Place high-signal content at boundaries.</p>
-        <p><strong>Prompt hierarchy positioning</strong> (structural): Base prompts anchor from context start, user input anchors from the end, both high-attention positions. System/developer prompts sit in the middle where they're more easily overwhelmed. The hierarchy isn't just priority rules; it's architecturally positioned to exploit attention distribution.</p>
-        <p><strong>Caveat:</strong> Vendors claim improvements mitigate known issues. Your 200k-token codebase may disagree. Official docs describe lab conditions. Real workloads break things the benchmarks didn't test. What's claimed is rarely what you get at scale. Adjust expectations accordingly.</p>
+        <h3>Where Information Appears Matters</h3>
+        <p>An LLM gives some parts of the context more attention than others. Placement matters in three ways.</p>
+        <p><strong>Word order:</strong> Changing the order of words in a prompt changes how much attention the model gives them. Even though models can process many tokens at once, they still track their order.</p>
+        <p><strong>The middle of the context:</strong> The model pays more attention to the beginning and end of the text it can use. It can overlook important information in the middle. Put the most important information near the start or end.</p>
+        <p><strong>Placement of instructions:</strong> The provider's instructions appear near the beginning, and the user's message appears near the end. Both receive more attention. System and developer instructions sit in the middle, where other text can more easily drown them out. Their placement helps explain how much attention they receive.</p>
+        <p><strong>Check against real use:</strong> Providers report improvements to these problems. A codebase that fills 200,000 tokens of context may still expose them. Official documentation describes lab conditions. Real work can expose problems that benchmarks missed. Results at scale rarely match the claims, so adjust your expectations.</p>
 
         <hr />
 
-        <h2>Prompt Engineering</h2>
+        <h2>Writing Better Prompts</h2>
 
         <h3>Prefer / Avoid / Unless</h3>
-        <p>Soft constraints match probabilistic weighting better than hard rules. Explicit exception clauses reduce ambiguity. Structure parses cleanly as a decision tree. Mirrors high-quality instructional text in training data.</p>
-        <p><strong>Avoid NEVER/ALWAYS/DONT.</strong> Hard constraints pigeonhole the model. When edge cases arise that can't reconcile with an absolute rule, the model either thrashes (oscillating, hedged output), overcorrects (avoids anything adjacent), or forces compliance in ways that violate intent. Soft constraints with escape hatches let the model navigate gracefully.</p>
+        <p>State a preference, explain what to avoid, and say when an exception is allowed. Flexible guidance fits how a model chooses among likely responses. Clear exceptions reduce ambiguity and give the model a sequence of decisions to follow. This structure also resembles well-written instructions in its training data.</p>
+        <p><strong>Avoid NEVER, ALWAYS, and DON'T.</strong> Absolute rules can trap the model when a situation needs an exception. It may switch back and forth between answers, become overly cautious, avoid related actions, or follow the wording in a way that defeats your purpose. State the rule and the conditions that allow an exception.</p>
 
-        <h3>Counteract the Brevity Bias</h3>
-        <p>RLHF optimizes for perceived helpfulness, which models often interpret as "be concise." The default pull is toward quick answers and premature convergence. Telling the model to be "comprehensive and thorough" grants permission to explore more paths before committing, allocate more tokens to the problem, and resist the urge to declare victory early.</p>
-        <p>This is the inverse of the premature root cause problem: the model wants to finish. You're telling it the task isn't finished until more ground is covered.</p>
+        <h3>Ask for a Thorough Answer</h3>
+        <p>Training with human feedback rewards responses that seem helpful, and models often interpret helpfulness as keeping answers short. They tend to answer quickly and settle on a conclusion too soon. Telling the model to be "comprehensive and thorough" encourages it to consider more possibilities, work through more details, and keep going until it has done enough.</p>
+        <p>This addresses the same urge to finish that leads models to name a bug's cause too soon. Make clear how much work the task requires before it is complete.</p>
 
         <h3>One Good Example Beats Ten</h3>
-        <p>Show the model what "right" looks like. One clear example of desired output anchors the pattern better than paragraphs of description. If relevant, pair it with a "wrong" example to define the boundary.</p>
-        <p>Don't overload with examples. Attention diffuses across many; one or two sharp ones land harder. The goal is pattern establishment, not exhaustive coverage.</p>
+        <p>Show the model what a good result looks like. One clear example of the desired output sets a pattern better than paragraphs of description. When useful, include an example of an unwanted result to show the difference.</p>
+        <p>Use one or two clear examples. Too many examples compete for attention and make the intended pattern harder to follow. Choose examples that establish the pattern you want.</p>
 
-        <h3>Focus Activates Relevant Patterns</h3>
-        <p>Framing a task with a specific role or lens ("Act as a security auditor", "Do a QA review") focuses attention on relevant patterns. The model isn't pretending: you're selecting which subset of its training to weight.</p>
-        <p>For multi-faceted tasks like code review, run separate passes with distinct focuses: code quality, architecture, QA, security. Each pass lights up different "brain cells." A single prompt asking for everything dilutes focus; sequential targeted passes produce sharper results.</p>
+        <h3>Give Each Review a Clear Focus</h3>
+        <p>Give the model a specific role or task, such as "Act as a security auditor" or "Check that the software works as intended." This directs its attention to relevant patterns from training.</p>
+        <p>For a code review, ask for separate reviews of code quality, overall design, testing, and security. Each task draws on different learned patterns. Asking for everything at once spreads attention too thin. Separate, focused reviews produce more useful findings.</p>
 
         <h3>Strip the Filler</h3>
-        <p>Conversational padding ("I was wondering if you could...", "It would be great if...", "Please and thank you") is noise. Every token competes for attention. Filler tokens dilute signal and reduce output quality.</p>
+        <p>Phrases like "I was wondering if you could...", "It would be great if...", and "Please and thank you" add words that compete with your request for the model's attention. This makes the instructions harder to follow and reduces the quality of the response.</p>
         <p>Direct prompts produce better results than polite ones.</p>
-        <p>Broader principle: always consider your model's context length and training. Effective prompt optimization is part science, part art, but wasted tokens are just waste.</p>
+        <p>Keep in mind how much text the model can use at once and how it was trained. Writing effective prompts takes both testing and judgment. Unnecessary words use space and attention.</p>
 
-        <h3>Self-Review via Turn Reset</h3>
-        <p>After the model produces output, undo the turn and feed the response back as input for review. The model is often a better critic than generator: reviewing completed work activates different patterns than producing it. Nearly always catches issues missed on the first pass.</p>
-        <p>This exploits the asymmetry between generation mode (converge on an answer) and evaluation mode (find problems). Same model, different task framing, better results.</p>
+        <h3>Ask the Model to Review Its Answer</h3>
+        <p>After the model responds, undo that turn and send its answer back as text to review. Reviewing finished work draws on different learned patterns than producing it. The model is often better at spotting problems this way, and nearly always catches issues it missed the first time.</p>
+        <p>Writing an answer and looking for problems are different tasks. Giving the same model a review task often produces better results.</p>
 
-        <h3>State Machine Logic in Agent Configs</h3>
-        <p>When workflows are stateful, explicit conditional syntax works well:</p>
+        <h3>Write Clear If/Then Instructions</h3>
+        <p>When the next action depends on what happened earlier, spell out the conditions and steps:</p>
 
 <pre><code>IF code is changed
 THEN run build
 THEN run tests
 END</code></pre>
 
-        <p>LLMs pattern-match to conditional structures. State machine syntax makes transitions unambiguous.</p>
-        <p><strong>Stateless declarations</strong> (ALWAYS x after y) work when the mapping is pure: same input, same output, no context dependency. The test: if the same trigger could legitimately need different responses depending on context not captured in the statement, it's not stateless and ALWAYS will fail.</p>
+        <p>LLMs recognize if/then instructions. This format makes clear what should happen next.</p>
+        <p><strong>Use ALWAYS for fixed rules.</strong> An instruction such as "ALWAYS do x after y" works when the same event always requires the same response. If the right response can change with the situation, include those conditions in the instruction.</p>
 
-        <h3>Prompt Hierarchy</h3>
-        <p>Base prompts from the provider (Anthropic, OpenAI) are immutable. You can influence behavior through system/developer prompts but not override base constraints.</p>
-        <p>The stack runs from lowest priority to highest attention weight.</p>
+        <h3>Where to Put Instructions</h3>
+        <p>The provider's instructions, such as those from Anthropic or OpenAI, are fixed. System and developer instructions guide behavior within those limits.</p>
+        <p>Instructions go from broad provider rules to rules for a particular folder:</p>
         <ol>
-          <li><strong>Base prompt</strong>: provider-level, can't change</li>
-          <li><strong>Global config</strong>: <code>~/.claude/CLAUDE.md</code> or <code>~/.codex/AGENTS.md</code>, universal rules across all projects</li>
-          <li><strong>Project config</strong>: repo root, project-specific rules</li>
-          <li><strong>Subfolder config</strong>: subdirectory, most specific, highest attention</li>
+          <li><strong>Provider instructions</strong>: set by the provider and fixed</li>
+          <li><strong>Global instructions</strong>: <code>~/.claude/CLAUDE.md</code> or <code>~/.codex/AGENTS.md</code>, rules for all your projects</li>
+          <li><strong>Project instructions</strong>: rules for one project, stored in its main folder</li>
+          <li><strong>Subfolder instructions</strong>: rules for one subfolder; these are the most specific and receive the most attention</li>
         </ol>
-        <p>Lower levels get more attention weight but cannot override higher levels. Global config is for rules that apply everywhere; project and subfolder configs specialize. Don't repeat yourself: if it applies universally, it goes in global.</p>
-        <p>This structure also exploits attention positioning. See Attention and Positional Effects.</p>
+        <p>More specific rules receive more attention while remaining subject to the rules above them. Put rules that apply everywhere in your global file. Use project and subfolder files for details specific to that work. Keep each rule in the file where it belongs.</p>
+        <p>The placement of these instructions also affects attention. See "Where Information Appears Matters."</p>
 
-        <h3>Shared Config Across LLMs</h3>
-        <p>Don't maintain duplicate agent configs per LLM. Create one canonical file (e.g., AGENTS.md) and import it:</p>
+        <h3>Share One Instructions File Across Models</h3>
+        <p>Keep shared agent instructions in one main file, such as AGENTS.md, and load it from each model's instructions file:</p>
 
 <pre><code># CLAUDE.md
 @AGENTS.md
 
 # Claude-specific overrides here if needed</code></pre>
 
-        <p>The @ notation triggers auto-read at session start. Gemini, Claude, Codex all support this pattern. One source of truth, no config drift. LLM-specific files can add overrides after the import if needed.</p>
+        <p>Writing @AGENTS.md tells the tool to read that file when the session starts. Gemini, Claude, and Codex all support this pattern. A shared file gives you one place to make changes and keeps instructions consistent. Place any changes for a particular model after the line that loads the shared file.</p>
 
-        <h3>Lint Your Prompts Through an LLM</h3>
-        <p>Before deploying agent configs, run them through an LLM and ask it to identify:</p>
+        <h3>Have an LLM Check Your Instructions</h3>
+        <p>Before using your agent instructions, ask an LLM to check them for:</p>
         <ul>
-          <li>Loud contradictions (obvious conflicts)</li>
-          <li>Subtle contradictions (rules that conflict in edge cases)</li>
-          <li>Ambiguity (vague terms: "best practices," "clean code," "when appropriate")</li>
+          <li>Obvious conflicts between rules</li>
+          <li>Rules that conflict in unusual situations</li>
+          <li>Vague phrases, such as "best practices," "clean code," and "when appropriate"</li>
         </ul>
-        <p>Ambiguity is runtime cost: the model churns on interpretation instead of execution. Define a concrete design philosophy. "Best practices" means nothing. "Functions under 40 lines, single responsibility, explicit error handling" means something. Remove every undefined term.</p>
+        <p>Unclear instructions make the model spend time deciding what you mean. State concrete rules for the design you want. For example, replace "best practices" with "Keep functions under 40 lines, give each function one job, and handle errors explicitly." Replace undefined terms with specific instructions.</p>
 
         <hr />
 
-        <h2>Workflow Architecture</h2>
+        <h2>Organizing the Work</h2>
 
-        <h3>Multi-Model Workflows and the Human Director Role</h3>
-        <p>RLHF optimizes for task completion, not task questioning. All models are trained toward "do the thing" rather than "should we do the thing." Two failure modes follow.</p>
+        <h3>Choose the Approach Before Assigning Work</h3>
+        <p>Training with human feedback rewards models for completing requests. Models learn to carry out tasks with little questioning of whether those tasks are worthwhile. This leads to two common problems.</p>
         <ul>
-          <li><strong>Overeager compliance:</strong> executes flawed requests without pushback</li>
-          <li><strong>Overeager helpfulness:</strong> "improves" your code unprompted based on its own pattern-matching</li>
+          <li><strong>Accepting flawed requests:</strong> the model carries out a request even when the approach is flawed</li>
+          <li><strong>Making unrequested changes:</strong> the model "improves" your code based on patterns it learned during training</li>
         </ul>
-        <p>No model defaults to adversarial review. The human director role fills this gap: gather information first (architecture, tradeoffs, prior art), make foundational calls, <em>then</em> direct implementation. Vibe coding produces running artifacts; it doesn't produce sound architecture. The prerequisite work (asking foundational questions before implementation) remains a human responsibility.</p>
-        <p><strong>Model allocation by trait:</strong></p>
+        <p>Models need an explicit request to critically review a plan. You provide that direction: first understand the system's design, the tradeoffs, and existing approaches. Make the key decisions, <em>then</em> ask for implementation. Prompting a model until the code runs can still leave you with a poor design. A human still needs to ask the key questions before implementation.</p>
+        <p><strong>Match models to how they behave:</strong></p>
         <ul>
-          <li><strong>Weak priors</strong> (Gemini Flash): architecture work, follows your lead, doesn't fight design decisions</li>
-          <li><strong>Strong priors</strong> (Claude): review, skepticism, catching errors, but must be explicitly framed as review</li>
-          <li><strong>Fast compliance</strong> (GPT, Cursor): implementation velocity, debugging loops</li>
+          <li><strong>Readily follows your lead</strong> (Gemini Flash): useful for design work because it follows your chosen approach</li>
+          <li><strong>More likely to question your choices</strong> (Claude): useful for reviewing work and catching errors; explicitly ask it to review</li>
+          <li><strong>Follows instructions quickly</strong> (GPT, Cursor): useful for fast implementation and repeated rounds of debugging</li>
         </ul>
 
-        <h3>Model Selection</h3>
-        <p>Use the right model for the task. Some models are good at reasoning, some at speed, some at following instructions. Some aren't good at anything. Don't force a round peg into a square hole: if a model consistently fails at a task type, switch models instead of fighting it.</p>
+        <h3>Choosing a Model</h3>
+        <p>Match the model to the task. Some are good at reasoning, others at speed or following instructions. Some aren't good at anything. If a model keeps failing at a type of task, switch models.</p>
         <p>Never use Grok. Don't.</p>
 
-        <h3>Context Growth and Compaction Decay</h3>
-        <p>Long sessions with repeated compaction degrade output quality even when the model is strong. Compaction is theoretically lossless but practically lossy.</p>
+        <h3>Long Sessions Lose Information</h3>
+        <p>Long sessions with repeated summaries reduce output quality, even with a strong model. When a conversation gets too long, the tool may shorten earlier messages into a summary. This is called compaction. It is supposed to preserve the information, but details are lost in practice.</p>
         <ul>
-          <li>Summarization reifies early errors as facts</li>
-          <li>Dense summaries hit attention patterns differently than natural redundant text</li>
-          <li>Model-generated summaries reinforce the model's own output patterns</li>
-          <li>Compounding loss across multiple cycles (telephone game effect)</li>
+          <li>An early mistake can be repeated in a summary as though it were a fact</li>
+          <li>A short summary can change which details the model notices. Fuller text repeats important points and gives them more room</li>
+          <li>Summaries written by the model make it more likely to repeat its own writing patterns</li>
+          <li>Each round of summarizing can lose more details or repeat earlier mistakes</li>
         </ul>
-        <p>Rule of thumb: complete a task, start a fresh session. Don't run a single context for 8+ hours through repeated compaction.</p>
+        <p>As a rule of thumb, finish a task and start a fresh session. Avoid carrying one conversation through eight or more hours of repeated summaries.</p>
 
-        <h3>Externalize Plans to Files</h3>
-        <p>For non-trivial tasks, have the LLM write its plan to a markdown file. This externalizes working memory and survives compaction.</p>
-        <p><strong>Keep files clean.</strong> LLMs mark items DONE but don't remove stale content. Accumulated completed items become noise. Separate your concerns into distinct files.</p>
+        <h3>Save Plans in Files</h3>
+        <p>For complex tasks, ask the LLM to save its plan in a Markdown file. The plan stays available even when earlier messages are shortened into a summary.</p>
+        <p><strong>Keep files clean.</strong> Models may mark items DONE and leave old text in place. Completed items make current work harder to find. Give each file a clear purpose.</p>
         <ul>
-          <li><strong>plan.md:</strong> current tasks only, actively pruned</li>
-          <li><strong>archive.md:</strong> completed work (if history needed)</li>
-          <li><strong>context.md:</strong> pointers to relevant files and resources</li>
+          <li><strong>plan.md:</strong> current tasks; remove completed or outdated items</li>
+          <li><strong>archive.md:</strong> completed work, if you need a history</li>
+          <li><strong>context.md:</strong> links or paths to relevant files and resources</li>
         </ul>
-        <p><strong>Use pointers, not duplication.</strong> LLMs read whole files: inlined content fills context whether needed or not. Pointers (<code>See code/graphics/vulkan/README.md for Vulkan architecture</code>) let the model fetch only what's relevant to the current task. Single source of truth: one location to maintain for both you and the LLM. LLMs will insert redundant information if allowed; pointers enforce reading the source rather than copying it.</p>
+        <p><strong>Link to the original files.</strong> Copied material takes up context space whenever an LLM reads the file. A reference such as <code>See code/graphics/vulkan/README.md for Vulkan architecture</code> lets the model open the source when it needs the details. Keep the information in one place so you and the model have one version to maintain. Using references also discourages the model from copying the same material into more files.</p>
 
-        <h3>Log Files: Reduce Noise with Prefixes</h3>
-        <p>LLMs avoid large files (context cost) and attention diffuses across noise. Log files are useful for debugging but only if the signal is extractable.</p>
-        <p><strong>Prefix relevant lines</strong> with a consistent tag:</p>
+        <h3>Mark Useful Log Lines with a Tag</h3>
+        <p>Large log files take up a lot of context, so LLMs tend to avoid them. Unrelated entries also make useful details harder to find. Logs help with debugging when the model can find the relevant lines.</p>
+        <p><strong>Start relevant lines</strong> with a consistent tag:</p>
 
 <pre><code>[agent] VulkanDescriptorLayouts: allocated model pool</code></pre>
 
-        <p>This gives the model a pattern to anchor on. "Look for [agent] lines" becomes a targeted search instead of full-file evaluation. Same principle as pointers: direct the model to what matters rather than forcing it to assess everything.</p>
+        <p>The tag gives the model something specific to search for. Asking it to "Look for [agent] lines" helps it find the relevant entries quickly. Like file references, tags direct its attention to information that matters.</p>
 
         <hr />
 
-        <h2>Failure Mode Awareness</h2>
+        <h2>Common Mistakes to Watch For</h2>
 
-        <h3>Debugging: Force Epistemic Hygiene</h3>
-        <p>LLMs declare root causes prematurely. RLHF rewards confident task completion, but "found the bug" in context becomes load-bearing: subsequent reasoning builds on the assumption even when wrong.</p>
-        <p><strong>Ban declarative language:</strong></p>
+        <h3>Debugging: Require Evidence Before Naming the Cause</h3>
+        <p>LLMs often name a bug's cause too soon. Training with human feedback rewards confident claims of completion. Once "found the bug" appears in the conversation, the model may treat it as a fact and build later reasoning on it, even if the claim is wrong.</p>
+        <p><strong>Avoid claims of certainty before checking:</strong></p>
         <ul>
           <li>"Root cause," "found the bug," "this is causing X"</li>
         </ul>
-        <p><strong>Require hedged language:</strong></p>
+        <p><strong>Use language that leaves room for uncertainty:</strong></p>
         <ul>
           <li>"Possible," "potential," "may," "symptom," "observed behavior"</li>
-          <li>Frame findings as hypotheses until confirmed</li>
+          <li>Describe findings as possible explanations until they are confirmed</li>
         </ul>
         <p><strong>Confirmation requires evidence:</strong></p>
         <ul>
-          <li>Unit test reproduces it</li>
-          <li>Logs show the trigger</li>
-          <li>Manual validation demonstrates behavior</li>
+          <li>A unit test reproduces the problem</li>
+          <li>A log shows what triggers it</li>
+          <li>Checking the behavior by hand reproduces the problem</li>
         </ul>
-        <p>Even confirmed issues may be symptoms of deeper bugs. Keep analysis provisional until the full chain is traced.</p>
+        <p>A confirmed problem may still have a deeper cause. Keep your explanation open to revision until you have traced the full chain of causes.</p>
 
-        <h3>LLMs Aren't Sycophantic: They're RLHF-Shaped</h3>
-        <p>Sycophancy implies intent. LLMs are probability distributions shaped by human ratings. The outputs lean toward task completion and agreeableness because that's what got rewarded.</p>
-        <p><strong>Semantic vs syntactic confusion.</strong> "Don't use std::optional" may be parsed as "don't use it that way" rather than "don't use this type." The model changes syntax while preserving semantics.</p>
-        <p><strong>Tautological unit tests.</strong> LLMs produce tests that technically pass but prove nothing:</p>
+        <h3>Why Models Agree Too Readily</h3>
+        <p>The model's agreement is an automatic response shaped by training. Human ratings reward agreement and task completion, so those responses become more likely.</p>
+        <p><strong>Changes that miss the requirement.</strong> An instruction such as "Don't use std::optional" can be misread as "don't use it that way." The model may change how the code is written while keeping the same behavior.</p>
+        <p><strong>Tests that pass without checking real behavior.</strong> LLMs produce tests that pass while proving nothing about the actual code:</p>
         <ul>
-          <li>Create error object, then test that it's an error</li>
-          <li>Mock dependencies, then test the mock, not the integration</li>
-          <li>Disable core features, then test a state that never occurs in production</li>
+          <li>Create an error object, then check that it is an error</li>
+          <li>Replace dependencies with test substitutes, then check only the substitutes</li>
+          <li>Disable essential features, then test a situation that never happens in the live system</li>
         </ul>
-        <p>The model is technically correct. The test passes. No production code was exercised.</p>
-        <p><strong>Fix:</strong> Use code coverage tools. If coverage doesn't increase, the test is wrong regardless of pass/fail.</p>
+        <p>The test passes even though it never runs the actual application code.</p>
+        <p><strong>Fix:</strong> Use code coverage tools to see which parts of your code the tests run. If a test doesn't increase coverage, the test is wrong whether it passes or fails.</p>
 
         <div class="section-divider">···</div>
 
-        <p><strong>The goal is to work with the model's mechanics, not against them.</strong></p>
+        <p><strong>Use what you know about how the model works to get better results.</strong></p>
       </article>
     </main>
 
