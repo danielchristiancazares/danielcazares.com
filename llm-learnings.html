@@ -470,11 +470,14 @@
 
         <hr />
 
-        <h2>Writing Better Prompts</h2>
+        <h2>Writing User Prompts</h2>
+
+        <h3>Describe the Outcome and Hard Constraints</h3>
+        <p>Tell the model what success looks like and which boundaries it must respect. Current models can usually work out how to get there. Dictating the route too closely can restrict their judgment and produce worse results.</p>
 
         <h3>Prefer / Avoid / Unless</h3>
         <p>State a preference, explain what to avoid, and say when an exception is allowed. Flexible guidance fits how a model chooses among likely responses. Clear exceptions reduce ambiguity and give the model a sequence of decisions to follow. This structure also resembles well-written instructions in its training data.</p>
-        <p><strong>Avoid NEVER, ALWAYS, and DON'T.</strong> Absolute rules can trap the model when a situation needs an exception. It may switch back and forth between answers, become overly cautious, avoid related actions, or follow the wording in a way that defeats your purpose. State the rule and the conditions that allow an exception.</p>
+        <p><strong>Reserve absolute rules for hard constraints.</strong> When a preference needs exceptions, state them. Treating it as an absolute can make the model switch back and forth between answers, become overly cautious, avoid related actions, or follow the wording in a way that defeats your purpose.</p>
 
         <h3>Ask for a Thorough Answer</h3>
         <p>Training with human feedback rewards responses that seem helpful, and models often interpret helpfulness as keeping answers short. They tend to answer quickly and settle on a conclusion too soon. Telling the model to be "comprehensive and thorough" encourages it to consider more possibilities, work through more details, and keep going until it has done enough.</p>
@@ -488,14 +491,35 @@
         <p>Give the model a specific role or task, such as "Act as a security auditor" or "Check that the software works as intended." This directs its attention to relevant patterns from training.</p>
         <p>For a code review, ask for separate reviews of code quality, overall design, testing, and security. Each task draws on different learned patterns. Asking for everything at once spreads attention too thin. Separate, focused reviews produce more useful findings.</p>
 
-        <h3>Strip the Filler</h3>
-        <p>Phrases like "I was wondering if you could...", "It would be great if...", and "Please and thank you" add words that compete with your request for the model's attention. This makes the instructions harder to follow and reduces the quality of the response.</p>
-        <p>Direct prompts produce better results than polite ones.</p>
+        <h3>Keep User Prompts Direct</h3>
+        <p>In user prompts, phrases like "I was wondering if you could...", "It would be great if...", and "Please and thank you" add words that compete with your request for the model's attention. This makes the instructions harder to follow and reduces the quality of the response.</p>
+        <p>Direct user prompts produce better results than polite ones.</p>
         <p>Keep in mind how much text the model can use at once and how it was trained. Writing effective prompts takes both testing and judgment. Unnecessary words use space and attention.</p>
 
-        <h3>Ask the Model to Review Its Answer</h3>
-        <p>After the model responds, undo that turn and send its answer back as text to review. Reviewing finished work draws on different learned patterns than producing it. The model is often better at spotting problems this way, and nearly always catches issues it missed the first time.</p>
-        <p>Writing an answer and looking for problems are different tasks. Giving the same model a review task often produces better results.</p>
+        <h3>Ask the Agent to Challenge Its Own Work</h3>
+        <p>Ask for an adversarial review of its findings, plan, or finished work. Looking for faulty assumptions, missing evidence, and errors gives the model a different objective and helps it catch mistakes it missed while producing the result.</p>
+        <p>Undo the original turn and send its answer back for review so the model evaluates it as a new task.</p>
+
+        <hr />
+
+        <h2>Writing System and Developer Prompts</h2>
+
+        <h3>Replace the Base Instructions to Establish Your Own Priorities</h3>
+        <p>Replace the base instructions when you want to define the agent's role and priorities yourself. Across most models I've tested, this has let me change how the agent approaches its work. The method for supplying those instructions depends on the tool.</p>
+
+        <h3>Give the Agent Reasons for How It Works</h3>
+        <p>LLMs learn patterns from human writing, and human feedback further shapes their behavior. Give your agents emotionally meaningful principles in their system/developer prompts so their decisions follow a consistent set of values.</p>
+        <p>This extends "Act as a..." by establishing how the agent should work, what it takes responsibility for, and why the outcome matters.</p>
+
+        <h3>Make Respecting the Request Part of Success</h3>
+        <p>Make faithfulness to your request part of the agent's definition of good work so it has a reason to respect scope. Instructions that make fixing every defect paramount can encourage it to take on every problem it discovers.</p>
+
+        <h3>Choose Words That Assign Responsibility</h3>
+        <p>Use wording such as "review your recommendation" so the instruction makes the agent responsible for the advice it gave. References to the person receiving the work can also keep that person's interests and the consequences of the agent's decisions in view.</p>
+
+        <hr />
+
+        <h2>Organizing and Reviewing Instructions</h2>
 
         <h3>Write Clear If/Then Instructions</h3>
         <p>When the next action depends on what happened earlier, spell out the conditions and steps:</p>
@@ -509,16 +533,15 @@ END</code></pre>
         <p><strong>Use ALWAYS for fixed rules.</strong> An instruction such as "ALWAYS do x after y" works when the same event always requires the same response. If the right response can change with the situation, include those conditions in the instruction.</p>
 
         <h3>Where to Put Instructions</h3>
-        <p>The provider's instructions, such as those from Anthropic or OpenAI, are fixed. System and developer instructions guide behavior within those limits.</p>
-        <p>Instructions go from broad provider rules to rules for a particular folder:</p>
+        <p>Use the base instructions to establish the agent's role, priorities, and responsibilities. Put rules for a project or folder with the work they govern.</p>
+        <p>Instructions can cover the agent's overall behavior or the work in a particular folder:</p>
         <ol>
-          <li><strong>Provider instructions</strong>: set by the provider and fixed</li>
+          <li><strong>Base instructions</strong>: the agent's starting role and approach to its work</li>
           <li><strong>Global instructions</strong>: <code>~/.claude/CLAUDE.md</code> or <code>~/.codex/AGENTS.md</code>, rules for all your projects</li>
           <li><strong>Project instructions</strong>: rules for one project, stored in its main folder</li>
-          <li><strong>Subfolder instructions</strong>: rules for one subfolder; these are the most specific and receive the most attention</li>
+          <li><strong>Subfolder instructions</strong>: rules for the work in one subfolder</li>
         </ol>
-        <p>More specific rules receive more attention while remaining subject to the rules above them. Put rules that apply everywhere in your global file. Use project and subfolder files for details specific to that work. Keep each rule in the file where it belongs.</p>
-        <p>The placement of these instructions also affects attention. See "Where Information Appears Matters."</p>
+        <p>Put rules that apply everywhere in your global file. Use project and subfolder files for details specific to that work. Each tool decides how it loads these files and resolves conflicting instructions.</p>
 
         <h3>Share One Instructions File Across Models</h3>
         <p>Keep shared agent instructions in one main file, such as AGENTS.md, and load it from each model's instructions file:</p>
@@ -538,6 +561,9 @@ END</code></pre>
           <li>Vague phrases, such as "best practices," "clean code," and "when appropriate"</li>
         </ul>
         <p>Unclear instructions make the model spend time deciding what you mean. State concrete rules for the design you want. For example, replace "best practices" with "Keep functions under 40 lines, give each function one job, and handle errors explicitly." Replace undefined terms with specific instructions.</p>
+
+        <h3>Preserve the Purpose of a Prompt When Editing It</h3>
+        <p>Check what a phrase contributes before simplifying it. Small changes can alter responsibility, emphasis, or permission. Git history can recover the reason for unusual wording so a cleaner sentence preserves the behavior the original was intended to encourage.</p>
 
         <hr />
 
